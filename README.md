@@ -29,29 +29,49 @@
 - DeepSeek Harness `0.1.0-rc.7`。
 - npm。
 
-## 从源码安装
+## 稳定安装与手动更新
+
+稳定版插件安装在 DSH Home 的本地包目录中，与本仓库解耦；因此可以移动、删除或重新克隆本仓库，而不影响日常使用的 `web` profile。
+
+每次确认修改可发布后，在项目目录执行：
 
 ```powershell
-git clone https://github.com/young-yyj/dsh-skill-browser.git
-cd dsh-skill-browser
-npm ci
 npm run verify
-dsh plugin --profile web add "link:$PWD"
+npm run build
+npm version patch --no-git-tag-version
+
+$dshRoot = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path ([Environment]::GetFolderPath('UserProfile')) '.dsh' }
+$archiveDir = Join-Path $dshRoot 'local-packages/dsh-skill-browser'
+New-Item -ItemType Directory -Force -Path $archiveDir | Out-Null
+$pack = npm pack --json --pack-destination $archiveDir | ConvertFrom-Json
+$tarball = Join-Path $archiveDir $pack[0].filename
+dsh plugin --profile web add $tarball --save-exact
 ```
 
-运行：
+然后重启稳定版 DSH Web：
 
 ```powershell
-dsh web
+dsh web --no-open
 ```
 
-打开一个已有会话，然后点击会话标题栏中的“技能”。
+`npm version patch --no-git-tag-version` 只更新本地版本号；请在验证后将该版本号变更与代码一起提交。每次发布保留上一版本 `.tgz`，以便回退。
 
-卸载：
+## 开发安装与即时验证
+
+开发 profile 使用源码链接，不影响稳定 `web` profile。首次创建开发环境：
 
 ```powershell
-dsh plugin --profile web remove dsh-skill-browser
+dsh plugin --profile web-dev add "link:$PWD" --save-exact
 ```
+
+日常开发时，修改代码后执行：
+
+```powershell
+npm run build
+dsh --profile web-dev web
+```
+
+重新启动开发版 Web 并打开已有会话，即可在会话标题栏验证“技能”入口和浏览器功能。开发 profile 依赖当前源码目录；稳定 profile 不依赖该目录。
 
 ## 开发与验证
 
