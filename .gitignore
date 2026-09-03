@@ -1,0 +1,17 @@
+node_modules/
+lib/
+coverage/
+artifacts/
+*.log
+*.tgz
+*.bak
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+.DS_Store
+Thumbs.db
