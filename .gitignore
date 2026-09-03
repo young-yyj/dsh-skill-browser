@@ -15,3 +15,4 @@ artifacts/
 *.pfx
 .DS_Store
 Thumbs.db
+.worktrees/
