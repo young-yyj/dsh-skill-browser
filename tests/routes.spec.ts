@@ -49,7 +49,6 @@ describe('skill browser routes', () => {
   const catalog = {
     list: vi.fn(),
     detail: vi.fn(),
-    assertSession: vi.fn(),
   }
   const logger = { warn: vi.fn() }
   let events: CatalogEventHub
@@ -58,7 +57,6 @@ describe('skill browser routes', () => {
   beforeEach(() => {
     catalog.list.mockReset()
     catalog.detail.mockReset()
-    catalog.assertSession.mockReset()
     logger.warn.mockReset()
     events = new CatalogEventHub()
     routes = makeRoutes({ logger } as never, { catalog: catalog as never, events })
@@ -81,7 +79,7 @@ describe('skill browser routes', () => {
     expect(list.json()).toEqual({ revision: 0, skills: [] })
     expect(detail.statusCode).toBe(200)
     expect(detail.json()).toEqual({ name: 'pdf', content: 'body' })
-    expect(catalog.detail).toHaveBeenCalledWith('s1', 'pdf')
+    expect(catalog.detail).toHaveBeenCalledWith('pdf')
     expect(list.headers['cache-control']).toBe('no-store')
   })
 
@@ -118,7 +116,6 @@ describe('skill browser routes', () => {
     const response = await invoke(ROUTES.events, request(`${ROUTES.events}?sessionId=s1`))
     expect(response.statusCode).toBe(200)
     expect(response.ended).toBe(false)
-    expect(catalog.assertSession).toHaveBeenCalledWith('s1')
     expect(response.chunks.join('')).toContain(': connected')
     events.publish(7)
     expect(response.chunks.join('')).toContain('event: catalog')
@@ -129,11 +126,9 @@ describe('skill browser routes', () => {
     expect(response.chunks).toHaveLength(before)
   })
 
-  it('validates the session before opening an SSE stream', async () => {
-    catalog.assertSession.mockRejectedValueOnce(new Error('storage unavailable'))
+  it('opens an SSE stream without resolving the selected session', async () => {
     const response = await invoke(ROUTES.events, request(`${ROUTES.events}?sessionId=missing`))
-    expect(response.statusCode).toBe(500)
-    expect(response.ended).toBe(true)
-    expect(response.headers['content-type']).toContain('application/json')
+    expect(response.statusCode).toBe(200)
+    expect(response.ended).toBe(false)
   })
 })

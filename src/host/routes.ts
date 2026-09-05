@@ -5,7 +5,6 @@ import { isAllowedRequest } from './access.ts'
 import { CatalogError, type CatalogService } from './catalog-service.ts'
 import type { CatalogEventHub } from './events.ts'
 import { boundedQuery, methodIs, sendError, sendJson, urlOf } from './http.ts'
-import { SessionSkillViewError } from './session-skill-view.ts'
 
 export const ROUTES = {
   catalog: '/api/dsh-skill-browser/catalog',
@@ -14,13 +13,13 @@ export const ROUTES = {
 } as const
 
 interface RouteDependencies {
-  catalog: Pick<CatalogService, 'assertSession' | 'list' | 'detail'>
+  catalog: Pick<CatalogService, 'list' | 'detail'>
   events: CatalogEventHub
 }
 
-function statusFor(error: CatalogError | SessionSkillViewError): number {
-  if (error.code === 'skill/not-found' || error.code === 'session/not-found') return 404
-  if (error.code === 'session/unavailable') return 503
+function statusFor(error: CatalogError): number {
+  if (error.code === 'skill/not-found') return 404
+  if (error.code === 'skills/unavailable') return 503
   return 409
 }
 
@@ -48,7 +47,7 @@ export function makeRoutes(ctx: Context, dependencies: RouteDependencies): WebRo
   }
 
   const handleError = (res: Parameters<WebRoute['handler']>[1], error: unknown) => {
-    if (error instanceof CatalogError || error instanceof SessionSkillViewError) {
+    if (error instanceof CatalogError) {
       sendError(res, statusFor(error), error.code, error.message)
       return
     }
@@ -64,7 +63,7 @@ export function makeRoutes(ctx: Context, dependencies: RouteDependencies): WebRo
         const prepared = prepare(req, res)
         if (prepared === undefined) return
         try {
-          sendJson(res, 200, await dependencies.catalog.list(prepared.sessionId))
+          sendJson(res, 200, await dependencies.catalog.list())
         } catch (error) {
           handleError(res, error)
         }
@@ -82,7 +81,7 @@ export function makeRoutes(ctx: Context, dependencies: RouteDependencies): WebRo
           return
         }
         try {
-          sendJson(res, 200, await dependencies.catalog.detail(prepared.sessionId, name))
+          sendJson(res, 200, await dependencies.catalog.detail(name))
         } catch (error) {
           handleError(res, error)
         }
@@ -95,7 +94,6 @@ export function makeRoutes(ctx: Context, dependencies: RouteDependencies): WebRo
         const prepared = prepare(req, res)
         if (prepared === undefined) return
         try {
-          await dependencies.catalog.assertSession(prepared.sessionId)
           const dispose = dependencies.events.subscribe(res)
           if (dispose === undefined) {
             sendError(res, 503, 'events/capacity', 'too many skill browser event streams')

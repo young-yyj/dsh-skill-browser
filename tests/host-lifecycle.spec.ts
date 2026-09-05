@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apply } from '../src/index.ts'
+import { CatalogService } from '../src/host/catalog-service.ts'
 
 class SseResponse extends EventEmitter {
   chunks: string[] = []
@@ -20,6 +21,10 @@ describe('host lifecycle', () => {
     let change: (() => void) | undefined
     let cleanup: (() => void) | undefined
     const stopChange = vi.fn()
+    const watch = vi.spyOn(CatalogService.prototype, 'watch').mockImplementation(listener => {
+      change = listener
+      return stopChange
+    })
     const ctx = {
       webServer: {
         register: vi.fn((route: typeof routes[number]) => {
@@ -27,27 +32,11 @@ describe('host lifecycle', () => {
           return routeDisposers[routes.length - 1]
         }),
       },
-      on: vi.fn((_name: string, listener: () => void) => {
-        change = listener
-        return stopChange
-      }),
       effect: vi.fn((factory: () => () => void) => {
         cleanup = factory()
         return vi.fn()
       }),
       logger: { warn: vi.fn() },
-      sessionQuery: {
-        readSession: vi.fn(async () => ({
-          session: { cwd: 'C:/work', agentPreset: 'standard' },
-          events: [],
-        })),
-      },
-      agents: { get: vi.fn(() => undefined) },
-      get: vi.fn((key: string) => {
-        if (key === 'agentPresets') return { standingKeyFor: vi.fn(async () => ({ agentPreset: 'standard' })) }
-        if (key === 'skills') return { snapshot: vi.fn(async () => ({ complete: true, skills: [] })) }
-        return undefined
-      }),
     }
 
     apply(ctx as never)
@@ -73,6 +62,7 @@ describe('host lifecycle', () => {
     expect(stopChange).toHaveBeenCalledOnce()
     expect(routeDisposers.every(dispose => dispose.mock.calls.length === 1)).toBe(true)
     expect(response.ended).toBe(true)
+    watch.mockRestore()
   })
 
   it('rolls back earlier routes when a later registration fails', () => {
