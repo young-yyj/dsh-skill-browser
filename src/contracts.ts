@@ -34,6 +34,7 @@ export interface ResourceBaseDto {
 export interface BrowserSkillSummary {
   name: string
   description: string
+  metadataError?: string
   whenToUse?: string
   source: string
   provider: string
@@ -89,6 +90,7 @@ export function isBrowserSkillSummary(value: unknown): value is BrowserSkillSumm
   const row = value as Partial<BrowserSkillSummary>
   return isSkillName(row.name)
     && isBoundedString(row.description, MAX_DESCRIPTION_CHARS)
+    && (row.metadataError === undefined || isBoundedString(row.metadataError, MAX_LABEL_CHARS))
     && (row.whenToUse === undefined || isBoundedString(row.whenToUse, MAX_DESCRIPTION_CHARS))
     && isBoundedString(row.source, MAX_LABEL_CHARS)
     && isBoundedString(row.provider, MAX_LABEL_CHARS)

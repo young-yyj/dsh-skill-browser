@@ -19,6 +19,40 @@ afterEach(async () => {
 })
 
 describe('DshHomeSkillCatalog', () => {
+  it.each([
+    ['Windows last field', '---\r\ndescription: Hello\r\n---\r\n', 'Hello'],
+    ['BOM', '\uFEFF---\ndescription: Hello\n---\n', 'Hello'],
+    ['literal', '---\ndescription: |\n  Hello\n  world\n---\n', 'Hello\nworld'],
+    ['folded', '---\ndescription: >-\n  Hello\n  world\n---\n', 'Hello world'],
+    ['quoted', '---\ndescription: "Hello: \\"world\\""\n---\n', 'Hello: "world"'],
+    ['missing', '# Body\ndescription: ignored\n', ''],
+  ])('reads %s descriptions', async (_name, content, expected) => {
+    const root = await skillsRoot()
+    await mkdir(join(root, 'example'))
+    await writeFile(join(root, 'example', 'SKILL.md'), content)
+    const catalog = new DshHomeSkillCatalog({ skillsRoot: () => root })
+    expect((await catalog.list(0)).skills[0]?.description).toBe(expected)
+    expect((await catalog.detail('example')).content).toBe(content)
+  })
+
+  it.each([
+    '---\ndescription: [broken\n---\n',
+    '---\ndescription: Hello\n---oops\n',
+    '---\ndescription: [one, two]\n---\n',
+    '---\ndescription: *missing\n---\n',
+  ])('retains malformed skills without breaking the catalog', async content => {
+    const root = await skillsRoot()
+    for (const [name, text] of [['broken', content], ['valid', '---\ndescription: Good\n---\n']]) {
+      await mkdir(join(root, name!))
+      await writeFile(join(root, name!, 'SKILL.md'), text!)
+    }
+    const catalog = new DshHomeSkillCatalog({ skillsRoot: () => root })
+    const result = await catalog.list(0)
+    expect(result.skills).toHaveLength(2)
+    expect(result.skills[0]).toMatchObject({ name: 'broken', description: '', metadataError: expect.any(String) })
+    expect(result.skills[1]?.description).toBe('Good')
+  })
+
   it('scans only direct DSH Home skill folders and parses frontmatter', async () => {
     const root = await skillsRoot()
     await mkdir(join(root, 'xlsx'))

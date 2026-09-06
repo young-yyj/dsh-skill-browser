@@ -1,6 +1,7 @@
 import type { Dirent } from 'node:fs'
 import { lstat, open, readdir, realpath } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
+import { parseDocument } from 'yaml'
 import { dshHomeDisplay, dshHomePath } from '@deepseek-ai/dsh-home-paths'
 import { classifySkill } from '../classifier.ts'
 import {
@@ -30,25 +31,36 @@ function isContained(root: string, target: string): boolean {
   return difference === '' || (!difference.startsWith(`..${sep}`) && difference !== '..')
 }
 
-function frontmatter(content: string): Record<string, string> {
-  if (!content.startsWith('---\n') && !content.startsWith('---\r\n')) return {}
-  const end = content.indexOf('\n---', 4)
-  if (end === -1) return {}
-  const result: Record<string, string> = {}
-  for (const line of content.slice(4, end).split(/\r?\n/u)) {
-    const match = /^([a-zA-Z][\w-]*):\s*(.*)$/u.exec(line)
-    if (match?.[1] !== undefined && match[2] !== undefined) {
-      result[match[1]] = match[2].replace(/^(?:"|')|(?:"|')$/gu, '').trim()
-    }
-  }
-  return result
+function frontmatter(content: string): Record<string, unknown> {
+  const normalized = content.replace(/^\uFEFF/u, '').replace(/\r\n?/gu, '\n')
+  if (!/^---[ \t]*\n/u.test(normalized)) return {}
+  const lines = normalized.split('\n')
+  const end = lines.findIndex((line, index) => index > 0 && /^(?:---|\.\.\.)[ \t]*$/u.test(line))
+  if (end === -1) throw new Error('Missing frontmatter closing delimiter')
+  const document = parseDocument(lines.slice(1, end).join('\n'), { prettyErrors: false })
+  if (document.errors.length) throw document.errors[0]
+  if (document.warnings.length) throw document.warnings[0]
+  const metadata: unknown = document.toJS({ maxAliasCount: 0 })
+  if (metadata === null) return {}
+  if (typeof metadata !== 'object' || Array.isArray(metadata)) throw new Error('Frontmatter must be a mapping')
+  return metadata as Record<string, unknown>
 }
 
-function descriptionFor(content: string): { description: string, whenToUse?: string } {
-  const metadata = frontmatter(content)
-  const description = (metadata.description ?? '').slice(0, MAX_DESCRIPTION_CHARS)
-  const whenToUse = metadata['when-to-use']?.slice(0, MAX_DESCRIPTION_CHARS)
-  return whenToUse === undefined ? { description } : { description, whenToUse }
+function descriptionFor(content: string): Pick<BrowserSkillSummary, 'description' | 'whenToUse' | 'metadataError'> {
+  try {
+    const metadata = frontmatter(content)
+    const field = (key: string): string | undefined => {
+      const value = metadata[key]
+      if (value === undefined || value === null) return undefined
+      if (typeof value !== 'string') throw new Error(`${key} must be a string`)
+      return value.trim().slice(0, MAX_DESCRIPTION_CHARS)
+    }
+    const description = field('description') ?? ''
+    const whenToUse = field('when-to-use')
+    return whenToUse === undefined ? { description } : { description, whenToUse }
+  } catch (error) {
+    return { description: '', metadataError: (error instanceof Error ? error.message : 'Invalid YAML metadata').slice(0, 256) }
+  }
 }
 
 async function readSkillFile(path: string): Promise<{ content: string, truncated: boolean }> {

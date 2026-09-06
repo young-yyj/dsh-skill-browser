@@ -115,6 +115,44 @@ describe('SkillBrowserEntry', () => {
     delete (window as typeof window & { __unsafe?: boolean }).__unsafe
   })
 
+  it('shows missing and invalid metadata feedback while keeping detail accessible', async () => {
+    const api = new FakeClient()
+    api.catalog.mockResolvedValue({ ...catalog, skills: [
+      { ...catalog.skills[0]!, description: '' },
+      { ...catalog.skills[1]!, description: '', metadataError: 'Invalid YAML' },
+    ] })
+    api.detail.mockResolvedValue({ ...detail, name: 'agent-browser', description: '', metadataError: 'Invalid YAML' })
+    await act(async () => root.render(
+      <SkillBrowserEntry sessionId={'session-feedback' as never} api={api} t={translator} />,
+    ))
+    await click(buttonNamed('技能'))
+    expect(document.querySelector('[data-skill-card="pdf"]')?.textContent).toContain('暂无简介')
+    expect(document.querySelector('[data-skill-card="agent-browser"]')?.textContent).toContain('技能元数据解析失败')
+    await click(buttonNamed('agent-browser'))
+    expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('Invalid YAML')
+    expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
+  })
+
+  it('filters by output format and offers a counted relaxation for incompatible input', async () => {
+    const api = new FakeClient()
+    await act(async () => root.render(
+      <SkillBrowserEntry sessionId="formats" api={api} t={translator} />,
+    ))
+    await click(buttonNamed('技能'))
+    const html = document.querySelector<HTMLButtonElement>('[data-output="HTML"]')
+    expect(html).not.toBeNull()
+    await click(html!)
+    expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(1)
+    expect(document.querySelector('[data-skill-card="frontend-design"]')).not.toBeNull()
+    await click(document.querySelector<HTMLButtonElement>('[data-input="CSV"]')!)
+    expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(0)
+    await click(buttonNamed('移除输入限制'))
+    expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(1)
+    expect(document.querySelector('.qx-sb-card-body')?.textContent).toContain('适用于')
+    await click(buttonNamed('清空筛选'))
+    expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(3)
+  })
+
   it('opens, filters, shows inert detail text, and restores focus on close', async () => {
     const api = new FakeClient()
     await act(async () => root.render(
@@ -136,7 +174,7 @@ describe('SkillBrowserEntry', () => {
     expect(search).not.toBeNull()
     await act(async () => {
       if (!search) return
-      enterSearch(search, 'pdf')
+      enterSearch(search, '读取与创建 PDF 文档')
     })
     expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(1)
     expect(document.body.textContent).toContain('pdf')
@@ -146,7 +184,7 @@ describe('SkillBrowserEntry', () => {
       if (!search) return
       enterSearch(search, '')
     })
-    await click(buttonNamed('文档处理'))
+    await click(buttonNamed('办公文件'))
     expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(1)
 
     await click(buttonNamed('pdf'))

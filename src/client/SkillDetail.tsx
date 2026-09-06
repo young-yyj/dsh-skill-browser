@@ -42,7 +42,10 @@ export function SkillDetail({ name, detail, loading, error, t, onClose, onRetry 
           )}
           {detail && !loading && !error && (
             <>
-              <div className="qx-sb-detail-desc">{detail.description}</div>
+              <div className="qx-sb-detail-desc">
+                {detail.metadataError ? t('status.metadataError') : detail.description || t('status.noDescription')}
+              </div>
+              {detail.metadataError && <pre className="qx-sb-pre">{detail.metadataError}</pre>}
               {detail.whenToUse && <section className="qx-sb-detail-section"><h3>{t('detail.whenToUse')}</h3><div>{detail.whenToUse}</div></section>}
               <dl className="qx-sb-detail-section">
                 {detail.path && <div className="qx-sb-detail-row"><dt>{t('detail.path')}</dt><dd>{detail.path}</dd></div>}

@@ -1,17 +1,12 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Translate } from '@deepseek-ai/dsh-client-ui-slots'
 import {
-  SKILL_CATEGORIES,
-  type BrowserSkillSummary,
   type CatalogResponse,
-  type CategoryFilter,
-  type SkillCategory,
   type SkillDetailResponse,
 } from '../contracts.ts'
-import { categoryCounts, filterSkills } from './catalog-model.ts'
 import { focusableElements, trapTab } from './focus.ts'
-import { SkillCard } from './SkillCard.tsx'
+import { SkillExplorer } from './SkillExplorer.tsx'
 import { SkillDetail } from './SkillDetail.tsx'
 import type { SkillBrowserLocaleKey } from './locales.ts'
 
@@ -27,23 +22,6 @@ export interface SkillBrowserEntryProps {
   sessionId: string
   api: SkillBrowserClient
   t: SkillBrowserTranslate
-}
-
-const CATEGORY_LABEL: Record<SkillCategory, SkillBrowserLocaleKey> = {
-  dsh: 'category.dsh',
-  development: 'category.development',
-  documents: 'category.documents',
-  spreadsheets: 'category.spreadsheets',
-  data: 'category.data',
-  research: 'category.research',
-  design: 'category.design',
-  visual: 'category.visual',
-  media: 'category.media',
-  system: 'category.system',
-  collaboration: 'category.collaboration',
-  governance: 'category.governance',
-  lifestyle: 'category.lifestyle',
-  other: 'category.other',
 }
 
 function messageOf(error: unknown): string {
@@ -81,7 +59,6 @@ function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProp
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState<CategoryFilter>('all')
   const [selectedName, setSelectedName] = useState<string | null>(null)
   const [detail, setDetail] = useState<SkillDetailResponse | null>(null)
   const [detailError, setDetailError] = useState<string | null>(null)
@@ -126,7 +103,7 @@ function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProp
       if (!name) return
       const card = [...(dialogRef.current?.querySelectorAll<HTMLElement>('[data-skill-card]') ?? [])]
         .find(element => element.dataset.skillCard === name)
-      card?.focus()
+      card?.querySelector<HTMLElement>('.qx-sb-card-name')?.focus()
     })
   }, [])
 
@@ -185,12 +162,6 @@ function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProp
   }, [closeDetail, onClose])
 
   const skills = catalog?.skills ?? []
-  const counts = useMemo(() => categoryCounts(skills), [skills])
-  const filtered = useMemo(() => filterSkills(skills, query, category), [category, query, skills])
-  const categories = useMemo(
-    () => SKILL_CATEGORIES.filter(value => counts[value] > 0),
-    [counts],
-  )
   const formattedTime = catalog ? new Date(catalog.generatedAt).toLocaleString() : ''
 
   return createPortal(
@@ -231,16 +202,6 @@ function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProp
             />
             {query && <button type="button" className="qx-sb-button qx-sb-icon-button qx-sb-clear" aria-label={t('search.clear')} onClick={() => setQuery('')}>×</button>}
           </div>
-          <div className="qx-sb-pills" role="group" aria-label={t('dialog.context')}>
-            <button type="button" className="qx-sb-pill" aria-pressed={category === 'all'} onClick={() => setCategory('all')}>
-              {t('category.all')} <span className="qx-sb-pill-count">{counts.all}</span>
-            </button>
-            {categories.map(value => (
-              <button key={value} type="button" className="qx-sb-pill" aria-pressed={category === value} onClick={() => setCategory(value)}>
-                {t(CATEGORY_LABEL[value])} <span className="qx-sb-pill-count">{counts[value]}</span>
-              </button>
-            ))}
-          </div>
         </div>
         <main className="qx-sb-main">
           {catalog && <div className="qx-sb-context" title={catalog.cwd}>{t('dialog.cwd', { cwd: catalog.cwd })}</div>}
@@ -249,12 +210,7 @@ function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProp
           {!catalog && loading && <CatalogState title={t('status.loading')} t={t} />}
           {catalogError && !catalog && <CatalogState title={t('status.error', { message: catalogError })} retry={() => { void loadCatalog() }} t={t} />}
           {catalog && skills.length === 0 && <CatalogState title={t('status.empty')} t={t} />}
-          {catalog && skills.length > 0 && filtered.length === 0 && <CatalogState title={t('status.noResults')} t={t} />}
-          {filtered.length > 0 && <div className="qx-sb-grid">
-            {filtered.map((skill: BrowserSkillSummary) => (
-              <SkillCard key={skill.name} skill={skill} t={t} categoryLabel={t(CATEGORY_LABEL[skill.category])} onOpen={setSelectedName} />
-            ))}
-          </div>}
+          {catalog && skills.length > 0 && <SkillExplorer skills={skills} query={query} onQueryChange={setQuery} t={t} onOpen={setSelectedName} />}
         </main>
         {selectedName && (
           <SkillDetail
