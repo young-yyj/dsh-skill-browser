@@ -93,6 +93,8 @@ npm pack --dry-run
 
 参与开发前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
+架构说明：[技能目录与安全边界](docs/architecture/dsh-home-skills-catalog.md)、[稳定与开发环境分离](docs/architecture/dsh-profile-separation.md)。历史实施计划保留在本地 `docs/superpowers/plans/`，不纳入版本控制。
+
 ## 许可证
 
 [MIT](LICENSE)

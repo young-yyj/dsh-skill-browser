@@ -16,3 +16,4 @@ artifacts/
 .DS_Store
 Thumbs.db
 .worktrees/
+docs/superpowers/plans/
