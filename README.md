@@ -2,7 +2,7 @@
 
 一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的本地只读技能浏览插件。它在 DSH Web 会话标题栏中加入“技能”入口，用搜索、分类和详情面板展示 DSH Home `skills` 目录中的技能。
 
-> 当前版本适配 DeepSeek Harness `0.1.0-rc.7`。DSH 仍处于 Developer Preview，升级 DSH 后可能需要同步更新本插件。
+> 当前版本适配 DeepSeek Harness `0.1.2-rc.1`，已通过新版依赖构建、自动测试、隔离环境 HTTP 和真实会话界面验证。DSH 仍处于 Developer Preview，升级 DSH 后可能需要同步更新本插件。
 
 ## 功能
 
@@ -30,7 +30,7 @@
 ## 环境要求
 
 - Node.js 22 或更高版本。
-- DeepSeek Harness `0.1.0-rc.7`。
+- DeepSeek Harness `0.1.2-rc.1`（不再声明支持旧版 `0.1.0-rc.7`）。
 - npm。
 
 ## 稳定安装与手动更新
@@ -89,7 +89,7 @@ npm pack --dry-run
 
 分类、输入与输出资料在 `src/skill-metadata.ts` 中维护，筛选逻辑在 `src/client/skill-filters.ts` 中维护。新增或更新技能后，应核对其说明再更新映射；不能仅凭正文出现的文件扩展名认定输出能力。技能原文件始终只读。
 
-版本 0.1.4 的界面已通过独立 React 测试页面与真实目录快照验证；为遵守手动启动偏好，安装后由使用者自行重启 DSH Web，完成运行环境复核。
+版本 0.1.5 将旧客户端 runtime 注入替换为 UI renderer，移除未使用的 DSH 依赖与旧版 overrides。升级验证记录见 [DSH 兼容性验证](docs/architecture/dsh-compatibility.md)。稳定安装后仍需重启 DSH Web，完成运行环境复核。
 
 参与开发前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
