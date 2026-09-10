@@ -2,7 +2,7 @@
 
 一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的本地只读技能浏览插件。它在 DSH Web 会话标题栏中加入“技能”入口，用搜索、分类和详情面板展示 DSH Home `skills` 目录中的技能。
 
-> 当前版本适配 DeepSeek Harness `0.1.2-rc.1`，已通过新版依赖构建、自动测试、隔离环境 HTTP 和真实会话界面验证。DSH 仍处于 Developer Preview，升级 DSH 后可能需要同步更新本插件。
+> 当前版本适配 DeepSeek Harness `0.1.5-rc.1`，已通过新版依赖构建、自动测试、隔离环境 HTTP 和真实会话界面验证。DSH 仍处于 Developer Preview，升级 DSH 后可能需要同步更新本插件。
 
 ## 功能
 
@@ -30,20 +30,26 @@
 ## 环境要求
 
 - Node.js 22 或更高版本。
-- DeepSeek Harness `0.1.2-rc.1`（不再声明支持旧版 `0.1.0-rc.7`）。
+- DeepSeek Harness `0.1.5-rc.1`（旧版 DSH 请使用对应版本的插件）。
 - npm。
 
 ## 稳定安装与手动更新
 
 稳定版插件安装在 DSH Home 的本地包目录中，与本仓库解耦；因此可以移动、删除或重新克隆本仓库，而不影响日常使用的 `web` profile。
 
-每次确认修改可发布后，在项目目录执行：
+其他电脑首次安装时，先安装上述 Node.js、DSH 和 Git，然后在 PowerShell 中下载源码并构建：
 
 ```powershell
+git clone https://github.com/young-yyj/dsh-skill-browser.git
+cd dsh-skill-browser
+dsh --version
+npm ci
 npm run verify
-npm run build
-npm version patch --no-git-tag-version
+```
 
+确认 `dsh --version` 与环境要求一致后，在项目目录执行以下安装命令。首次安装无需递增插件版本：
+
+```powershell
 $dshRoot = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path ([Environment]::GetFolderPath('UserProfile')) '.dsh' }
 $archiveDir = Join-Path $dshRoot 'local-packages/dsh-skill-browser'
 New-Item -ItemType Directory -Force -Path $archiveDir | Out-Null
@@ -58,7 +64,11 @@ dsh plugin --profile web add $tarball --save-exact
 dsh web --no-open
 ```
 
-`npm version patch --no-git-tag-version` 只更新本地版本号；请在验证后将该版本号变更与代码一起提交。每次发布保留上一版本 `.tgz`，以便回退。
+打开终端显示的地址，选择工作区并进入会话，在标题栏点击“技能”入口。技能文件应位于 DSH Home 的 `skills/<技能名>/SKILL.md`；空会话首页没有该入口。
+
+后续安装仓库更新时，先执行 `git pull --ff-only`、`npm ci`、`npm run verify`，再重复打包、安装和重启步骤。开发者发布自己的修改时，先执行 `npm version patch --no-git-tag-version`，再验证、打包并提交版本变更。每次发布保留上一版本 `.tgz`，以便回退。
+
+如果安装被发布时间或完整性策略阻止，应等待包满足策略或排查安装来源，不要添加安全例外。安装成功不等于运行验证通过；若有 peer 依赖告警，请在重启后检查插件加载和界面。
 
 ## 开发安装与即时验证
 
@@ -89,7 +99,7 @@ npm pack --dry-run
 
 分类、输入与输出资料在 `src/skill-metadata.ts` 中维护，筛选逻辑在 `src/client/skill-filters.ts` 中维护。新增或更新技能后，应核对其说明再更新映射；不能仅凭正文出现的文件扩展名认定输出能力。技能原文件始终只读。
 
-版本 0.1.5 将旧客户端 runtime 注入替换为 UI renderer，移除未使用的 DSH 依赖与旧版 overrides。升级验证记录见 [DSH 兼容性验证](docs/architecture/dsh-compatibility.md)。稳定安装后仍需重启 DSH Web，完成运行环境复核。
+版本 0.1.6 将 DSH 依赖与支持声明同步至 `0.1.5-rc.1`，保留已验证的 UI renderer 和标题栏插槽接入方式。升级验证记录见 [DSH 兼容性验证](docs/architecture/dsh-compatibility.md)。稳定安装后仍需重启 DSH Web，完成运行环境复核。
 
 参与开发前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
