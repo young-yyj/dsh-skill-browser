@@ -33,7 +33,49 @@
 - DeepSeek Harness `0.1.5-rc.1`（旧版 DSH 请使用对应版本的插件）。
 - npm。
 
-## 稳定安装与手动更新
+## 下载安装（推荐）
+
+从 [v0.1.6 Release](https://github.com/young-yyj/dsh-skill-browser/releases/tag/v0.1.6) 安装已构建的包，无需 Git、下载源码或自行编译。当前已在 Windows 上验证，以下命令使用 PowerShell。
+
+先执行 `dsh --version`，确认是 `0.1.5-rc.1`。然后复制以下命令，下载到 DSH Home、校验文件并安装：
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$version = '0.1.6'
+$file = "dsh-skill-browser-$version.tgz"
+$baseUrl = "https://github.com/young-yyj/dsh-skill-browser/releases/download/v$version"
+$dshRoot = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path ([Environment]::GetFolderPath('UserProfile')) '.dsh' }
+$archiveDir = Join-Path $dshRoot 'local-packages/dsh-skill-browser'
+New-Item -ItemType Directory -Force -Path $archiveDir | Out-Null
+$tarball = Join-Path $archiveDir $file
+$checksumFile = Join-Path $archiveDir "SHA256SUMS-$version"
+Invoke-WebRequest "$baseUrl/$file" -OutFile $tarball
+Invoke-WebRequest "$baseUrl/SHA256SUMS" -OutFile $checksumFile
+$checksums = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($checksumFile))
+$match = [regex]::Match($checksums, '(?m)^([a-fA-F0-9]{64})  ' + [regex]::Escape($file) + '\r?$')
+if (!$match.Success) { throw 'Checksum entry missing' }
+if ((Get-FileHash -LiteralPath $tarball -Algorithm SHA256).Hash -ne $match.Groups[1].Value) { throw 'SHA256 mismatch; installation stopped' }
+dsh plugin --profile web add $tarball --save-exact
+if ($LASTEXITCODE -ne 0) { throw 'DSH installation failed' }
+```
+
+停止已运行的 DSH Web，再启动：
+
+```powershell
+dsh web --no-open
+```
+
+选择工作区并进入会话，在标题栏点击“技能”。本插件只展示你自己 DSH Home 中的 `skills/<技能名>/SKILL.md`，不附带技能文件；空会话首页没有入口。
+
+### 更新、回退与卸载
+
+- 更新：先查看目标 Release 的 DSH 兼容版本，使用该版本的安装命令，然后重启。保留旧 `.tgz`。
+- 回退：对已保存的旧 `.tgz` 重新执行 `dsh plugin --profile web add <旧包完整路径> --save-exact`，然后重启；旧插件也必须匹配当前 DSH 版本。
+- 卸载：执行 `dsh plugin --profile web remove dsh-skill-browser`，然后重启。不会删除你的技能文件。
+
+出现发布时间或完整性检查错误时，不要添加安全例外。peer 依赖告警需结合重启后的加载结果判断；反馈问题时请附 DSH 版本、插件版本和错误信息，勿附令牌或凭据。
+
+## 从源码安装（开发者）
 
 稳定版插件安装在 DSH Home 的本地包目录中，与本仓库解耦；因此可以移动、删除或重新克隆本仓库，而不影响日常使用的 `web` profile。
 
