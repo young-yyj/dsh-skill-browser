@@ -1,5 +1,23 @@
 # DSH 兼容性验证
 
+## 0.1.7：适配 DSH 0.1.7-rc.1
+
+2026-09-24 将支持声明、开发依赖、运行依赖及 peer 依赖中的 DSH 包统一更新至 `0.1.7-rc.1`，Cordis 更新至 `4.0.4`。根因是 DSH 0.1.7 起在安装与 profile 启动时强制校验 `@deepseek-ai/dsh*` peer 范围与运行时版本是否匹配，不匹配且无精确豁免时以 `incompatible-version` 拒绝加载；本插件此前精确钉在 `0.1.5-rc.1`，因此无法在新版 DSH 上加载。官方新版仍保留本插件使用的标题栏 utilities 插槽、语言注册、Web 路由及 DSH Home 路径接口，业务代码无需修改。另在 `package.json` 顶层补充官方 schema 位置的 `engines.dsh` 声明。
+
+| 检查 | 结果 |
+| --- | --- |
+| 修改前基线 | 83 项测试通过、1 项跳过，类型检查和构建通过 |
+| 新依赖验证 | 83 项测试通过、1 项跳过，类型检查和构建通过；npm 审计 0 漏洞；业务源码零改动 |
+| 隔离安装 | 临时 DSH Home 的 web-verify（base + web-app + 本插件）使用 0.1.7 tgz 安装，不依赖源码 link；未出现 `incompatible-version` 拒绝，DSH 0.1.7-rc.1 启动成功 |
+| HTTP | 目录与详情返回 200，跨来源请求返回 403 |
+| 目录刷新 | 新增临时技能后目录 revision 从 0 变为 1，列表从 1 项变为 2 项 |
+| SSE | `/api/dsh-skill-browser/events` 返回 200 并输出 `: connected` |
+| 真实界面 | 用户确认通过：稳定 web 重启后标题栏入口、搜索、筛选、详情正常 |
+
+安装工具仍会自动在临时 profile 写入 `minimumReleaseAgeExclude`；已移除这些例外并启用 `minimumReleaseAgeStrict`，未修改日常 profile 的安全配置。
+
+已按用户要求将 0.1.7 tgz 安装到稳定 `web` profile：安装成功、未出现 `incompatible-version` 拒绝，核验安装版本为 0.1.7、声明支持 DSH 0.1.7-rc.1，`--dump-config` 含 `qx-skill-browser`。0.1.6 及更早 tgz 仍保留在 DSH Home 本地归档目录中以便回退。稳定环境重启 DSH Web 后，用户确认界面运行正常。
+
 ## 0.1.6：适配 DSH 0.1.5-rc.1
 
 2026-09-10 将支持声明、开发依赖及 peer 依赖中的 DSH 包统一更新至 `0.1.5-rc.1`，Cordis 保持 `4.0.2`。官方新版保留本插件使用的标题栏 utilities 插槽、语言注册、Web 路由及 DSH Home 路径接口，无需修改业务代码。README 补齐其他电脑首次安装及后续更新步骤。
