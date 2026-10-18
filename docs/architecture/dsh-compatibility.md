@@ -1,5 +1,22 @@
 # DSH 兼容性验证
 
+## 0.1.9：适配 DSH 0.2.1-rc.2
+
+2026-10-17 将支持声明、开发依赖、运行依赖及 peer 依赖中的 DSH 包统一更新至 `0.2.1-rc.2`，Cordis 更新至 `4.0.5`。官方新版仍保留本插件使用的标题栏 utilities 插槽、语言注册、Web 路由及 DSH Home 路径接口，业务代码无需修改。本机 `@deepseek-ai/dsh` 已升级至 `0.2.1-rc.2`。
+
+| 检查 | 结果 |
+| --- | --- |
+| 修改前基线 | 83 项测试通过、1 项跳过，类型检查和构建通过 |
+| 新依赖验证 | 83 项测试通过、1 项跳过，类型检查和构建通过；npm 审计 0 漏洞；业务源码零改动 |
+| slots 包位置变化 | `@deepseek-ai/dsh-client-ui-slots` 已不在 DSH 0.2.1-rc.2 主包内，但 npm 仍发布 `0.2.1-rc.2`，且继续导出本插件使用的 `Translate` / `LocaleDictOf`；本插件对该包及 renderer、locale、conversation 均为 `import type`，无运行时引用，运行时只依赖 `dsh-home-paths` |
+| 依赖对齐 | `@deepseek-ai/dsh-home-paths` 由 `0.2.0-rc.1` 对齐至 `0.2.1-rc.2`（本次唯一随插件依赖变更的包）。profile 内原另有 `@deepseek-ai/cordis@4.0.1`、`@deepseek-ai/schemastery@3.18.4`、`schemastery@3.18.0` 副本，`pnpm why` 显示无包依赖 cordis，属历史残留；经用户确认后删除 profile 私有的 cordis 副本，解析回落至共享层 `4.0.5`（`profiles/node_modules` 经符号链接指向 DSH 宿主），删除后 `--dump-config` 仍为 1483 行且无 `incompatible` 记录。本插件对 cordis 仅有 `import type`，无运行时引用；第三方 `@linxin666/*` 插件存在运行时 cordis 引用，现已与宿主同版本 |
+| 隔离安装 | 未执行；本次按用户要求直接安装到稳定 `web` profile，运行态验证直接在该 profile 上进行 |
+| 真实界面 | 用户确认通过：刷新稳定 web 后标题栏「技能」入口可见并可正常打开 |
+
+2026-10-18 在正在运行的稳定 `web`（DSH `0.2.1-rc.2`，进程启动于 12:08）上完成运行态复核：`catalog` 返回 200 且 `revision` 为 2，38 个技能与 DSH Home `skills` 目录逐项一致；`detail` 对有效技能返回 200、缺失技能 404、非法技能名 400；`events` 返回 200 且首行为 `: connected`；跨来源请求 403、非 GET 405，均在源码契约内。profile 内安装副本与 `dsh-skill-browser-0.1.9.tgz` 逐字节一致，tgz 的 SHA256 与 `SHA256SUMS` 一致。DSH Web 自 0.2.1-rc.2 起对首页启用令牌鉴权（`GET /` 返回 401，需 `dsh web` 启动时打印的带 token 链接），不影响插件端点。
+
+审计说明：升级依赖后 `npm audit` 曾出现 3 项 high（`undici`、`source-map-js` 来自 devDependencies 的 jsdom/vitest，`compression` 来自 DSH 官方包 `dsh-host-webserver`）；执行 `npm audit fix` 后归零，均不进入发布包（`files` 仅含 `lib`、`cordis.patch.yml`、`README.md`、`LICENSE`）。
+
 ## 0.1.8：适配 DSH 0.2.0-rc.1
 
 2026-09-28 将支持声明、开发依赖、运行依赖及 peer 依赖中的 DSH 包统一更新至 `0.2.0-rc.1`，Cordis 保持 `4.0.4`。官方新版仍保留本插件使用的标题栏 utilities 插槽、语言注册、Web 路由及 DSH Home 路径接口，业务代码无需修改。本机 `@deepseek-ai/dsh` 已升级至 `0.2.0-rc.1`。
