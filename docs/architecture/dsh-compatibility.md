@@ -1,5 +1,21 @@
 # DSH 兼容性验证
 
+## 0.1.10：适配 DSH 0.2.1-rc.3
+
+2026-10-26 将支持声明、开发依赖、运行依赖及 peer 依赖中的 DSH 包统一更新至 `0.2.1-rc.3`，Cordis 保持 `4.0.5`。本机 `@deepseek-ai/dsh` 已于同日升级至 `0.2.1-rc.3`；`0.1.9` 的 `engines.dsh: 0.2.1-rc.2` 声明导致 profile 启动时拒绝加载该插件（插件安装日志提示 `incompatible`、`compatibility.json` 无豁免、`--dump-config` 中不出现插件层），因此本次为必要性升级。官方新版仍保留本插件使用的标题栏 utilities 插槽、语言注册、Web 路由及 DSH Home 路径接口。
+
+| 检查 | 结果 |
+| --- | --- |
+| API 对比 | `dsh-host-webserver`、`dsh-home-paths`、`dsh-client-ui-renderer`、`dsh-client-locale` 与 rc.2 内容一致；仅 `dsh-client-ui-conversation` 新增 View 标签「更多」菜单的插槽与类型，本插件使用的 `conversation.session.header.utilities` 未变；相关包均为 `import type`，业务源码零改动 |
+| 新依赖验证 | 类型检查、83 项测试通过（1 项跳过）与 Host/Client 生产构建通过 |
+| 依赖审计 | `npm audit fix` 后剩 2 项 moderate，均来自 devDependencies 的 `vitest@4.1.11`（修复需 `vitest@4.1.12`，超出本次适配范围），不进入发布包 |
+| 隔离安装 | 临时 DSH Home 的 `web` profile（base + web-app + 0.1.10 tgz）安装成功，运行时为 `0.2.1-rc.3`；`--dump-config` 含 `dsh-skill-browser` 层且无 `incompatible` 记录 |
+| HTTP | 目录 200（含测试技能）；详情 200、缺失技能 404、非法技能名 400；缺少 sessionId 400；非 GET 405；跨来源 403 |
+| SSE | `/api/dsh-skill-browser/events` 返回 200，首行为 `: connected`；新增临时技能后收到 `event: catalog`，目录 revision 由 0 变为 1 |
+| 客户端注册 | 启动页 `__DSH_BOOT__` 含 `dsh-skill-browser/client.js`，`release.version` 为 `0.2.1-rc.3` |
+| 稳定安装 | 0.1.10 tgz 安装到稳定 `web` profile；安装后发现 profile `dsh.profile.bundles` 缺少该插件项（历史遗留移除），已在备份原文件后恢复，`--dump-config` 含插件层且无 `incompatible`；安装副本与 tgz 逐文件一致（30/30）；旧 0.1.9 tgz 保留可回退 |
+| 真实界面 | 用户确认通过：2026-10-27 重启稳定 DSH Web 后标题栏「技能」入口与浏览器功能正常 |
+
 ## 0.1.9：适配 DSH 0.2.1-rc.2
 
 2026-10-17 将支持声明、开发依赖、运行依赖及 peer 依赖中的 DSH 包统一更新至 `0.2.1-rc.2`，Cordis 更新至 `4.0.5`。官方新版仍保留本插件使用的标题栏 utilities 插槽、语言注册、Web 路由及 DSH Home 路径接口，业务代码无需修改。本机 `@deepseek-ai/dsh` 已升级至 `0.2.1-rc.2`。
