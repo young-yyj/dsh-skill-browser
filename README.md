@@ -2,7 +2,7 @@
 
 一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的本地只读技能浏览插件。它在 DSH Web 会话标题栏中加入“技能”入口，用搜索、分类和详情面板展示 DSH Home `skills` 目录中的技能。
 
-> 当前版本适配 DeepSeek Harness `0.2.1-rc.3`，已通过新版依赖构建、自动测试、隔离环境 HTTP 和真实会话界面验证。DSH 仍处于 Developer Preview，升级 DSH 后可能需要同步更新本插件。
+> 当前版本兼容 DeepSeek Harness `>=0.2.1-rc.4 <0.3.0-0`，开发与发布依赖固定为已实测的 `0.2.1-rc.4`。DSH 仍处于 Developer Preview：0.2.x 的后续版本由兼容范围直接覆盖，0.3 起须重新验证并更新范围。
 
 ## 功能
 
@@ -30,18 +30,18 @@
 ## 环境要求
 
 - Node.js 22 或更高版本。
-- DeepSeek Harness `0.2.1-rc.3`（旧版 DSH 请使用对应版本的插件）。
+- DeepSeek Harness `>=0.2.1-rc.4 <0.3.0-0`（0.2.x 后续版本无需更换插件；更早的 DSH 或 0.3 起的版本请使用对应版本的插件）。
 - npm。
 
 ## 下载安装（推荐）
 
-从 [v0.1.10 Release](https://github.com/young-yyj/dsh-skill-browser/releases/tag/v0.1.10) 安装已构建的包，无需 Git、下载源码或自行编译。当前已在 Windows 上验证，以下命令使用 PowerShell。
+从 [v0.1.11 Release](https://github.com/young-yyj/dsh-skill-browser/releases/tag/v0.1.11) 安装已构建的包，无需 Git、下载源码或自行编译。当前已在 Windows 上验证，以下命令使用 PowerShell。
 
-先执行 `dsh --version`，确认是 `0.2.1-rc.3`。然后复制以下命令，下载到 DSH Home、校验文件并安装：
+先执行 `dsh --version`，确认输出在 `0.2.1-rc.4` 至 `0.2.x` 的兼容范围内。然后复制以下命令，下载到 DSH Home、校验文件并安装：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$version = '0.1.10'
+$version = '0.1.11'
 $file = "dsh-skill-browser-$version.tgz"
 $baseUrl = "https://github.com/young-yyj/dsh-skill-browser/releases/download/v$version"
 $dshRoot = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path ([Environment]::GetFolderPath('UserProfile')) '.dsh' }
@@ -141,7 +141,7 @@ npm pack --dry-run
 
 分类、输入与输出资料在 `src/skill-metadata.ts` 中维护，筛选逻辑在 `src/client/skill-filters.ts` 中维护。新增或更新技能后，应核对其说明再更新映射；不能仅凭正文出现的文件扩展名认定输出能力。技能原文件始终只读。
 
-版本 0.1.10 将 DSH 依赖与支持声明同步至 `0.2.1-rc.3`，Cordis 保持 `4.0.5`，以满足新版对 `@deepseek-ai/dsh*` 的强制兼容校验；业务源码零改动，保留已验证的 UI renderer 和标题栏插槽接入方式。升级验证记录见 [DSH 兼容性验证](docs/architecture/dsh-compatibility.md)。稳定安装后仍需重启 DSH Web，完成运行环境复核。
+版本 0.1.11 将 DSH 兼容声明从精确版本改为范围 `>=0.2.1-rc.4 <0.3.0-0`，并把 peer、开发与运行依赖精确对齐到已实测的 `0.2.1-rc.4`；Cordis 保持 `4.0.5`，业务源码零改动。此后 0.2.x 的 DSH 更新不再需要逐版本发布插件，0.3 起仍需复测并扩大范围。升级验证记录见 [DSH 兼容性验证](docs/architecture/dsh-compatibility.md)。稳定安装后仍需重启 DSH Web，完成运行环境复核。
 
 参与开发前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 

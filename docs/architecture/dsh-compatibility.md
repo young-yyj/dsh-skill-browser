@@ -1,5 +1,25 @@
 # DSH 兼容性验证
 
+## 0.1.11：适配 DSH 0.2.1-rc.4（兼容范围化）
+
+2026-10-28 将 DSH 支持声明从精确 `0.2.1-rc.3` 改为范围 `>=0.2.1-rc.4 <0.3.0-0`，并把 peer、开发与运行依赖精确对齐到 `0.2.1-rc.4`（Cordis 保持 `4.0.5`），业务源码零改动。
+
+根因：DSH 启动门禁读取插件**顶层** `engines.dsh` 的 SemVer range（声明后忽略 DSH peer 范围）；`0.2.1-rc.3` 这样的精确字符串只等于自身，因此本机升级到 `0.2.1-rc.4` 后 0.1.10 被拒绝加载，升级守卫关闭了它的 bundle。官方设计支持范围声明，本次同时把 0.2.x 的后续版本纳入兼容范围；上限用 `<0.3.0-0` 而非 `<0.3.0`，因为预发布也参与匹配，`0.3.0-alpha.*` 会被 `<0.3.0` 放行。0.3 起仍须复测并更新范围；devDependencies 继续精确固定已测版本，保证构建可复现。
+
+| 检查 | 结果 |
+| --- | --- |
+| 门禁预检 | 用本机 `@deepseek-ai/dsh-app-boot` 的 `evaluatePluginCompatibility` 实测：rc.4 下精确 rc.3 拒绝；`>=0.2.1-rc.4 <0.3.0-0`、精确 rc.4 通过 |
+| API 对比 | `dsh-host-webserver`、`dsh-home-paths`、`dsh-client-locale`、`dsh-client-ui-renderer`、`dsh-client-ui-slots` 的 rc.4 类型声明与 rc.3 一致；`dsh-client-ui-conversation` 仅 locales 类型有差异，且本插件对该包仅为 `import type` |
+| 新依赖验证 | 类型检查、84 项测试通过（1 项跳过）与 Host/Client 生产构建通过 |
+| 打包 | `dsh-skill-browser-0.1.11.tgz` 共 30 个文件，SHA256 `e24af29a6b027b2c86509ea5af260ca1989c133b5ff9d1bef450080cc2cb1e0b`；`SHA256SUMS` 与 `SHA256SUMS-0.1.11` 已更新 |
+| 隔离安装 | 临时 DSH Home 的 `web` profile（base + web-app + 0.1.11 tgz）安装成功，运行时为 `0.2.1-rc.4`；`--dump-config`（1234 行）含 `dsh-skill-browser` 层且无 `incompatible` |
+| HTTP | 目录 200（空技能目录，revision 0）；缺失技能 404；非法技能名 400；缺少 sessionId 400；跨来源 403；非 GET 405 |
+| SSE | `/api/dsh-skill-browser/events` 返回 200，首行为 `: connected` |
+| 客户端注册 | 启动页 `__DSH_BOOT__` 含 `dsh-skill-browser/client.js`，`release.version` 为 `0.2.1-rc.4` |
+| 稳定安装 | 0.1.11 tgz 安装到稳定 `web` profile；安装后 `dsh.profile.bundles` 仍保留“已关闭”状态，按 0.1.10 的先例备份后手工恢复 `dsh-skill-browser`；`--dump-config`（1668 行）含插件层、无 `incompatible`；运行中宿主经 HMR 重载后插件目录端点返回 200 |
+| 守卫状态 | 清理 `~/.dsh/upgrade-guard/disabled.json` 中 0.1.10 的关闭记录，避免后续守卫仍按“已关闭”处理 |
+| 真实界面 | 用户确认通过：刷新页面后标题栏“技能”入口与浏览器功能正常（2026-10-28） |
+
 ## 0.1.10：适配 DSH 0.2.1-rc.3
 
 2026-10-26 将支持声明、开发依赖、运行依赖及 peer 依赖中的 DSH 包统一更新至 `0.2.1-rc.3`，Cordis 保持 `4.0.5`。本机 `@deepseek-ai/dsh` 已于同日升级至 `0.2.1-rc.3`；`0.1.9` 的 `engines.dsh: 0.2.1-rc.2` 声明导致 profile 启动时拒绝加载该插件（插件安装日志提示 `incompatible`、`compatibility.json` 无豁免、`--dump-config` 中不出现插件层），因此本次为必要性升级。官方新版仍保留本插件使用的标题栏 utilities 插槽、语言注册、Web 路由及 DSH Home 路径接口。
