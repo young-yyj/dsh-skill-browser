@@ -3,9 +3,8 @@ import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
 export const NS = 'qx.skill-browser' as const
 
 export const zh = {
-  'trigger.label': '技能',
-  'trigger.ariaLabel': '打开技能浏览器',
-  'dialog.title': '技能浏览器',
+  'panel.label': '技能面板',
+  'dialog.title': '技能面板',
   'dialog.context': 'DSH Home 技能目录',
   'dialog.count': '共 {count} 个技能',
   'dialog.generatedAt': '更新于 {time}',
@@ -69,9 +68,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 }
 
 export const en = {
-  'trigger.label': 'Skills',
-  'trigger.ariaLabel': 'Open skill browser',
-  'dialog.title': 'Skill browser',
+  'panel.label': 'Skill panel',
+  'dialog.title': 'Skill panel',
   'dialog.context': 'DSH Home skills',
   'dialog.count': '{count} skills',
   'dialog.generatedAt': 'Updated {time}',

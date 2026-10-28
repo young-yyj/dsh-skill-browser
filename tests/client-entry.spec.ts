@@ -5,11 +5,20 @@ import { apply } from '../src/client/index.tsx'
 import { NS } from '../src/client/locales.ts'
 
 describe('client plugin entry', () => {
-  it('registers dictionaries and one session-header utility contribution', () => {
+  it('registers dictionaries, the main panel, and one sidebar panel entry', () => {
     const dispose = vi.fn()
     const registerLocale = vi.fn(() => dispose)
-    const registerSlot = vi.fn((_options: Record<string, unknown>, _component: unknown) => dispose)
-    const injectSlot = vi.fn((_name: string, callback: () => unknown) => callback())
+    const injects: Array<{ name: string, callback: () => unknown }> = []
+    const injectSlot = vi.fn((name: string, callback: () => unknown) => {
+      injects.push({ name, callback })
+      callback()
+      return dispose
+    })
+    const registrations: Array<{ options: Record<string, unknown> }> = []
+    const registerSlot = vi.fn((options: Record<string, unknown>, _component: unknown) => {
+      registrations.push({ options })
+      return dispose
+    })
     const cleanup: Array<() => void> = []
     const effect = vi.fn((callback: () => unknown) => {
       const result = callback()
@@ -21,7 +30,10 @@ describe('client plugin entry', () => {
 
     try {
       apply({
-        locale: { register: registerLocale },
+        locale: {
+          register: registerLocale,
+          bind: () => (key: string) => key,
+        },
         slots: { register: registerSlot, inject: injectSlot },
         effect,
       } as never)
@@ -30,19 +42,22 @@ describe('client plugin entry', () => {
     }
 
     expect(registerLocale).toHaveBeenCalledWith(NS, expect.objectContaining({ zh: expect.any(Object), en: expect.any(Object) }))
-    expect(injectSlot).toHaveBeenCalledWith('conversation.session.header.utilities', expect.any(Function))
-    expect(registerSlot).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'conversation.session.header.utilities',
-        id: 'qx-skill-browser',
-        locale: NS,
-        inject: expect.any(Function),
-      }),
-      expect.any(Function),
-    )
-    const registration = registerSlot.mock.calls[0]?.[0]
-    expect((registration?.inject as () => unknown)()).toEqual({ api: expect.any(Object) })
-    expect(document.querySelectorAll('style[data-plugin-css="qx-skill-browser"]')).toHaveLength(1)
+
+    const injectNames = injects.map(injection => injection.name)
+    expect(injectNames).toContain('main')
+    expect(injectNames).toContain('sidebar.panellist')
+
+    const mainRegistration = registrations.find(row => row.options.name === 'main')
+    const panelEntry = registrations.find(row => row.options.name === 'sidebar.panellist')
+    expect(mainRegistration).toBeDefined()
+    expect(panelEntry).toBeDefined()
+    // 硬约束:keyed main 面板的 key 必须等于侧栏行的 id,layout.selectPanel 依赖这一点
+    expect(mainRegistration?.options.key).toBe('qx-skill-browser')
+    expect(panelEntry?.options.id).toBe('qx-skill-browser')
+    // 排序:上下文洞察(20)之后
+    expect(panelEntry?.options.order).toBeGreaterThan(20)
+    expect(typeof panelEntry?.options.label).toBe('function')
+
     cleanup.reverse().forEach(disposeEffect => disposeEffect())
     expect(document.querySelectorAll('style[data-plugin-css="qx-skill-browser"]')).toHaveLength(0)
   })

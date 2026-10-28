@@ -6,7 +6,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CatalogResponse, SkillDetailResponse } from '../src/contracts.ts'
 import {
-  SkillBrowserEntry,
+  SkillBrowserPanel,
   type SkillBrowserClient,
 } from '../src/client/SkillBrowser.tsx'
 import { zh, type SkillBrowserLocaleKey } from '../src/client/locales.ts'
@@ -67,8 +67,8 @@ function translator(key: SkillBrowserLocaleKey, params?: Record<string, unknown>
 }
 
 class FakeClient implements SkillBrowserClient {
-  readonly catalog = vi.fn(async () => catalog)
-  readonly detail = vi.fn(async () => detail)
+  readonly catalog = vi.fn(async (_sessionId: string) => catalog)
+  readonly detail = vi.fn(async (_sessionId: string, _name: string) => detail)
   readonly disposeSubscription = vi.fn()
   onCatalog: (() => void) | undefined
 
@@ -98,7 +98,7 @@ function enterSearch(input: HTMLInputElement, value: string): void {
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
-describe('SkillBrowserEntry', () => {
+describe('SkillBrowserPanel', () => {
   let container: HTMLDivElement
   let root: Root
 
@@ -111,7 +111,6 @@ describe('SkillBrowserEntry', () => {
   afterEach(async () => {
     await act(async () => root.unmount())
     document.body.replaceChildren()
-    document.body.style.overflow = ''
     delete (window as typeof window & { __unsafe?: boolean }).__unsafe
   })
 
@@ -122,10 +121,7 @@ describe('SkillBrowserEntry', () => {
       { ...catalog.skills[1]!, description: '', metadataError: 'Invalid YAML' },
     ] })
     api.detail.mockResolvedValue({ ...detail, name: 'agent-browser', description: '', metadataError: 'Invalid YAML' })
-    await act(async () => root.render(
-      <SkillBrowserEntry sessionId={'session-feedback' as never} api={api} t={translator} />,
-    ))
-    await click(buttonNamed('技能'))
+    await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
     expect(document.querySelector('[data-skill-card="pdf"]')?.textContent).toContain('暂无简介')
     expect(document.querySelector('[data-skill-card="agent-browser"]')?.textContent).toContain('技能元数据解析失败')
     await click(buttonNamed('agent-browser'))
@@ -135,10 +131,7 @@ describe('SkillBrowserEntry', () => {
 
   it('filters by output format and offers a counted relaxation for incompatible input', async () => {
     const api = new FakeClient()
-    await act(async () => root.render(
-      <SkillBrowserEntry sessionId="formats" api={api} t={translator} />,
-    ))
-    await click(buttonNamed('技能'))
+    await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
     const html = document.querySelector<HTMLButtonElement>('[data-output="HTML"]')
     expect(html).not.toBeNull()
     await click(html!)
@@ -153,21 +146,14 @@ describe('SkillBrowserEntry', () => {
     expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(3)
   })
 
-  it('opens, filters, shows inert detail text, and restores focus on close', async () => {
+  it('opens with catalog data, filters, shows inert detail text, and restores focus on close', async () => {
     const api = new FakeClient()
-    await act(async () => root.render(
-      <SkillBrowserEntry sessionId={'session-1' as never} api={api} t={translator} />,
-    ))
+    await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
 
-    const trigger = buttonNamed('技能')
-    trigger.focus()
-    await click(trigger)
-
-    expect(api.catalog).toHaveBeenCalledWith('session-1', expect.any(AbortSignal))
-    expect(document.querySelector('[role="dialog"]')).not.toBeNull()
-    expect(document.querySelector('[role="dialog"] > header')).toBeNull()
+    expect(api.catalog).toHaveBeenCalledWith('qx-skill-browser-panel', expect.any(AbortSignal))
+    expect(document.querySelector('.qx-sb-page')).not.toBeNull()
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
     expect(document.querySelector('.qx-sb-pills')?.getAttribute('role')).toBe('group')
-    expect(document.body.style.overflow).toBe('hidden')
     expect(document.body.textContent).toContain('共 3 个技能')
 
     const search = document.querySelector<HTMLInputElement>('[type="search"]')
@@ -188,7 +174,7 @@ describe('SkillBrowserEntry', () => {
     expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(1)
 
     await click(buttonNamed('pdf'))
-    expect(api.detail).toHaveBeenCalledWith('session-1', 'pdf', expect.any(AbortSignal))
+    expect(api.detail).toHaveBeenCalledWith('qx-skill-browser-panel', 'pdf', expect.any(AbortSignal))
     expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
     expect(document.querySelector<HTMLElement>('.qx-sb-drawer-body')?.tabIndex).toBe(0)
     expect(document.querySelector('[data-skill-detail] script')).toBeNull()
@@ -196,23 +182,12 @@ describe('SkillBrowserEntry', () => {
 
     await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })))
     expect(document.querySelector('[data-skill-detail]')).toBeNull()
-    expect(document.querySelector('[role="dialog"]')).not.toBeNull()
-
-    await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })))
-    expect(document.querySelector('[role="dialog"]')).toBeNull()
-    expect(document.body.style.overflow).toBe('')
-    expect(document.activeElement).toBe(trigger)
-    expect(api.disposeSubscription).toHaveBeenCalledOnce()
+    expect(document.querySelector('.qx-sb-page')).not.toBeNull()
   })
 
-  it('reloads only while open and exposes empty search feedback', async () => {
+  it('reloads on catalog events and exposes empty search feedback', async () => {
     const api = new FakeClient()
-    await act(async () => root.render(
-      <SkillBrowserEntry sessionId={'session-2' as never} api={api} t={translator} />,
-    ))
-    expect(api.catalog).not.toHaveBeenCalled()
-
-    await click(buttonNamed('技能'))
+    await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
     expect(api.catalog).toHaveBeenCalledTimes(1)
     await act(async () => {
       api.onCatalog?.()
@@ -230,10 +205,7 @@ describe('SkillBrowserEntry', () => {
 
   it('shows refresh failures beside stale data and reloads an open detail after catalog refresh', async () => {
     const api = new FakeClient()
-    await act(async () => root.render(
-      <SkillBrowserEntry sessionId={'session-3' as never} api={api} t={translator} />,
-    ))
-    await click(buttonNamed('技能'))
+    await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
     await click(buttonNamed('pdf'))
     expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
 
@@ -255,13 +227,11 @@ describe('SkillBrowserEntry', () => {
     expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF updated')
   })
 
-  it('shows each skill source on its card', async () => {
+  it('shows each skill source on its card and renders the dashboard KPIs', async () => {
     const api = new FakeClient()
-    await act(async () => root.render(
-      <SkillBrowserEntry sessionId={'session-4' as never} api={api} t={translator} />,
-    ))
-    await click(buttonNamed('技能'))
+    await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
     expect(document.querySelector('[data-skill-card="pdf"]')?.textContent).toContain('user')
     expect(document.querySelector('[data-skill-card="frontend-design"]')?.textContent).toContain('内置')
+    expect(document.querySelector('[data-kpi="total"]')?.textContent).toBe('3')
   })
 })

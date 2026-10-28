@@ -1,11 +1,12 @@
 # DSH Skill Browser
 
-一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的本地只读技能浏览插件。它在 DSH Web 会话标题栏中加入“技能”入口，用搜索、分类和详情面板展示 DSH Home `skills` 目录中的技能。
+一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的本地只读技能浏览插件。它在 DSH Web 左侧栏加入“技能面板”一级入口，用概览仪表板、搜索、分类和详情面板展示 DSH Home `skills` 目录中的技能。
 
 > 当前版本兼容 DeepSeek Harness `>=0.2.1-rc.4 <0.3.0-0`，开发与发布依赖固定为已实测的 `0.2.1-rc.4`。DSH 仍处于 Developer Preview：0.2.x 的后续版本由兼容范围直接覆盖，0.3 起须重新验证并更新范围。
 
 ## 功能
 
+- 以一级侧栏面板提供入口（与插件、上下文洞察同列），面板占满中央区域，不依赖具体会话。
 - 只浏览 DSH Home 的 `<DSH_HOME>/skills/*/SKILL.md`，不读取项目目录或当前会话的技能注册表。
 - 按技能名、简介、适用场景、来源和提供方搜索。
 - 现有 41 个技能使用已审核的 10 类用途映射；未收录技能显示在“其他”，输入输出格式标为待确认。
@@ -67,7 +68,7 @@ if ($LASTEXITCODE -ne 0) { throw 'DSH installation failed' }
 dsh web --no-open
 ```
 
-选择工作区并进入会话，在标题栏点击“技能”。本插件只展示你自己 DSH Home 中的 `skills/<技能名>/SKILL.md`，不附带技能文件；空会话首页没有入口。
+启动后在左侧栏点击“技能面板”。本插件只展示你自己 DSH Home 中的 `skills/<技能名>/SKILL.md`，不附带技能文件。
 
 ### 更新、回退与卸载
 
@@ -108,7 +109,7 @@ dsh plugin --profile web add $tarball --save-exact
 dsh web --no-open
 ```
 
-打开终端显示的地址，选择工作区并进入会话，在标题栏点击“技能”入口。技能文件应位于 DSH Home 的 `skills/<技能名>/SKILL.md`；空会话首页没有该入口。
+打开终端显示的地址，在左侧栏点击“技能面板”入口。技能文件应位于 DSH Home 的 `skills/<技能名>/SKILL.md`。
 
 后续安装仓库更新时，先执行 `git pull --ff-only`、`npm ci`、`npm run verify`，再重复打包、安装和重启步骤。开发者发布自己的修改时，先执行 `npm version patch --no-git-tag-version`，再验证、打包并提交版本变更。每次发布保留上一版本 `.tgz`，以便回退。
 
@@ -129,7 +130,7 @@ npm run build
 dsh --profile web-dev web
 ```
 
-重新启动开发版 Web 并打开已有会话，即可在会话标题栏验证“技能”入口和浏览器功能。开发 profile 依赖当前源码目录；稳定 profile 不依赖该目录。
+重新启动开发版 Web，即可在左侧栏验证“技能面板”入口和浏览器功能。开发 profile 依赖当前源码目录；稳定 profile 不依赖该目录。
 
 ## 开发与验证
 

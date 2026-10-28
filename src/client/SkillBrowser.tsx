@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import type { Translate } from '@deepseek-ai/dsh-client-ui-slots'
 import {
   type CatalogResponse,
@@ -19,11 +18,14 @@ export interface SkillBrowserClient {
   subscribe(sessionId: string, onCatalog: () => void): () => void
 }
 
-export interface SkillBrowserEntryProps {
-  sessionId: string
+/** 一级面板挂载的对外 props；sessionId 由面板内部固定提供（host 仅做非空校验）。 */
+export interface SkillBrowserPanelProps {
   api: SkillBrowserClient
   t: SkillBrowserTranslate
 }
+
+/** 面板固定会话标识：catalog/detail/events 均要求非空 sessionId，但 host 不读取其内容。 */
+const PANEL_SESSION_ID = 'qx-skill-browser-panel'
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -48,7 +50,8 @@ function CatalogState({ title, detail, t, retry }: {
   )
 }
 
-function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProps & { onClose: () => void }): React.JSX.Element {
+export function SkillBrowserPanel({ api, t }: SkillBrowserPanelProps): React.JSX.Element {
+  const sessionId = PANEL_SESSION_ID
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -144,124 +147,84 @@ function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProp
   }, [api, detailRefreshKey, selectedName, sessionId])
 
   useEffect(() => {
-    const oldOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     queueMicrotask(() => searchRef.current?.focus())
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && selectedNameRef.current) {
         event.preventDefault()
-        if (selectedNameRef.current) closeDetail()
-        else onClose()
+        closeDetail()
         return
       }
       if (dialogRef.current) trapTab(event, dialogRef.current)
     }
     document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = oldOverflow
-    }
-  }, [closeDetail, onClose])
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [closeDetail])
 
   const skills = catalog?.skills ?? []
   const formattedTime = catalog ? new Date(catalog.generatedAt).toLocaleString() : ''
 
-  return createPortal(
-    <div
-      className="qx-sb-backdrop"
-      onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}
-    >
-      <div ref={dialogRef} className="qx-sb-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
-        <div className="qx-sb-header">
-          <div className="qx-sb-heading">
-            <span className="qx-sb-mark" aria-hidden="true">🧩</span>
-            <div>
-              <h1 id={titleId} className="qx-sb-title">{t('dialog.title')}</h1>
-              <p className="qx-sb-context">
-                <span>{t('dialog.context')}</span>
-                {catalog && <span>{t('dialog.count', { count: catalog.skills.length })}</span>}
-                {catalog && <span>{t('dialog.generatedAt', { time: formattedTime })}</span>}
-              </p>
-            </div>
-          </div>
-          <div className="qx-sb-actions">
-            <button type="button" className="qx-sb-button" disabled={loading} onClick={() => { void loadCatalog() }} aria-label={t('action.refresh')}>
-              <span aria-hidden="true">↻</span> <span className="qx-sb-button-label">{t('action.refresh')}</span>
-            </button>
-            <button type="button" className="qx-sb-button qx-sb-icon-button" aria-label={t('action.close')} onClick={onClose}>×</button>
-          </div>
-        </div>
-        <div className="qx-sb-controls">
-          <div className="qx-sb-search-wrap">
-            <span className="qx-sb-search-glyph" aria-hidden="true">⌕</span>
-            <input
-              ref={searchRef}
-              className="qx-sb-search"
-              type="search"
-              value={query}
-              placeholder={t('search.placeholder')}
-              onChange={event => setQuery(event.currentTarget.value)}
-            />
-            {query && <button type="button" className="qx-sb-button qx-sb-icon-button qx-sb-clear" aria-label={t('search.clear')} onClick={() => setQuery('')}>×</button>}
-          </div>
-        </div>
-        <main className="qx-sb-main">
-          {catalog && skills.length > 0 && (
-            <Dashboard skills={skills} activeCategory={activeCategory} onCategorySelect={setActiveCategory} t={t} />
-          )}
-          {catalog && <div className="qx-sb-context" title={catalog.cwd}>{t('dialog.cwd', { cwd: catalog.cwd })}</div>}
-          {catalog && catalogError && <p className="qx-sb-notice" role="status">{t('status.refreshError', { message: catalogError })}</p>}
-          {catalog && !catalog.complete && <p className="qx-sb-notice">{t('status.incomplete')}</p>}
-          {!catalog && loading && <CatalogState title={t('status.loading')} t={t} />}
-          {catalogError && !catalog && <CatalogState title={t('status.error', { message: catalogError })} retry={() => { void loadCatalog() }} t={t} />}
-          {catalog && skills.length === 0 && <CatalogState title={t('status.empty')} t={t} />}
-          {catalog && skills.length > 0 && <SkillExplorer skills={skills} query={query} onQueryChange={setQuery} t={t} onOpen={setSelectedName} activeCategory={activeCategory} onActiveCategoryChange={setActiveCategory} />}
-        </main>
-        {selectedName && (
-          <SkillDetail
-            name={selectedName}
-            detail={detail}
-            loading={detailLoading}
-            error={detailError}
-            t={t}
-            onClose={closeDetail}
-            onRetry={() => {
-              const current = selectedName
-              setSelectedName(null)
-              queueMicrotask(() => setSelectedName(current))
-            }}
-          />
-        )}
-      </div>
-    </div>,
-    document.body,
-  )
-}
-
-export function SkillBrowserEntry({ sessionId, api, t }: SkillBrowserEntryProps): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-
-  const close = useCallback(() => {
-    setOpen(false)
-    queueMicrotask(() => triggerRef.current?.focus())
-  }, [])
-
   return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        className="qx-sb-trigger"
-        aria-label={t('trigger.ariaLabel')}
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-      >
-        <span aria-hidden="true">🧩</span>
-        <span>{t('trigger.label')}</span>
-      </button>
-      {open && <SkillBrowserModal sessionId={sessionId} api={api} t={t} onClose={close} />}
-    </>
+    <div ref={dialogRef} className="qx-sb-page" role="region" aria-labelledby={titleId} tabIndex={-1}>
+      <div className="qx-sb-header">
+        <div className="qx-sb-heading">
+          <span className="qx-sb-mark" aria-hidden="true">🧩</span>
+          <div>
+            <h1 id={titleId} className="qx-sb-title">{t('dialog.title')}</h1>
+            <p className="qx-sb-context">
+              <span>{t('dialog.context')}</span>
+              {catalog && <span>{t('dialog.count', { count: catalog.skills.length })}</span>}
+              {catalog && <span>{t('dialog.generatedAt', { time: formattedTime })}</span>}
+            </p>
+          </div>
+        </div>
+        <div className="qx-sb-actions">
+          <button type="button" className="qx-sb-button" disabled={loading} onClick={() => { void loadCatalog() }} aria-label={t('action.refresh')}>
+            <span aria-hidden="true">↻</span> <span className="qx-sb-button-label">{t('action.refresh')}</span>
+          </button>
+        </div>
+      </div>
+      <div className="qx-sb-controls">
+        <div className="qx-sb-search-wrap">
+          <span className="qx-sb-search-glyph" aria-hidden="true">⌕</span>
+          <input
+            ref={searchRef}
+            className="qx-sb-search"
+            type="search"
+            value={query}
+            placeholder={t('search.placeholder')}
+            onChange={event => setQuery(event.currentTarget.value)}
+          />
+          {query && <button type="button" className="qx-sb-button qx-sb-icon-button qx-sb-clear" aria-label={t('search.clear')} onClick={() => setQuery('')}>×</button>}
+        </div>
+      </div>
+      <main className="qx-sb-main">
+        {catalog && skills.length > 0 && (
+          <Dashboard skills={skills} activeCategory={activeCategory} onCategorySelect={setActiveCategory} t={t} />
+        )}
+        {catalog && <div className="qx-sb-context" title={catalog.cwd}>{t('dialog.cwd', { cwd: catalog.cwd })}</div>}
+        {catalog && catalogError && <p className="qx-sb-notice" role="status">{t('status.refreshError', { message: catalogError })}</p>}
+        {catalog && !catalog.complete && <p className="qx-sb-notice">{t('status.incomplete')}</p>}
+        {!catalog && loading && <CatalogState title={t('status.loading')} t={t} />}
+        {catalogError && !catalog && <CatalogState title={t('status.error', { message: catalogError })} retry={() => { void loadCatalog() }} t={t} />}
+        {catalog && skills.length === 0 && <CatalogState title={t('status.empty')} t={t} />}
+        {catalog && skills.length > 0 && <SkillExplorer skills={skills} query={query} onQueryChange={setQuery} t={t} onOpen={setSelectedName} activeCategory={activeCategory} onActiveCategoryChange={setActiveCategory} />}
+      </main>
+      {selectedName && (
+        <SkillDetail
+          name={selectedName}
+          detail={detail}
+          loading={detailLoading}
+          error={detailError}
+          t={t}
+          onClose={closeDetail}
+          onRetry={() => {
+            const current = selectedName
+            setSelectedName(null)
+            queueMicrotask(() => setSelectedName(current))
+          }}
+        />
+      )}
+    </div>
   )
 }
 

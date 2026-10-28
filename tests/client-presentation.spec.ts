@@ -20,6 +20,12 @@ describe('skill browser presentation contract', () => {
     expect(SKILL_BROWSER_STYLES).toContain('border-color:var(--dsw-alias-interactive-primary')
     expect(SKILL_BROWSER_STYLES).toContain('--qxsb-c1:')
     expect(SKILL_BROWSER_STYLES).toContain('@container')
+    // 一级面板形态:满高页面根,无对话框残留
+    expect(SKILL_BROWSER_STYLES).toContain('.qx-sb-page{')
+    expect(SKILL_BROWSER_STYLES).toContain('container:qxsb/inline-size;--qxsb-c1:')
+    expect(SKILL_BROWSER_STYLES).not.toContain('qx-sb-backdrop')
+    expect(SKILL_BROWSER_STYLES).not.toContain('qx-sb-dialog')
+    expect(SKILL_BROWSER_STYLES).not.toContain('qx-sb-trigger')
 
     const disposeOwned = installSkillBrowserStyles()
     const disposeDuplicate = installSkillBrowserStyles()
