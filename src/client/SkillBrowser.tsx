@@ -6,6 +6,7 @@ import {
   type SkillDetailResponse,
 } from '../contracts.ts'
 import { focusableElements, trapTab } from './focus.ts'
+import { Dashboard } from './Dashboard.tsx'
 import { SkillExplorer } from './SkillExplorer.tsx'
 import { SkillDetail } from './SkillDetail.tsx'
 import type { SkillBrowserLocaleKey } from './locales.ts'
@@ -59,6 +60,7 @@ function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProp
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [selectedName, setSelectedName] = useState<string | null>(null)
   const [detail, setDetail] = useState<SkillDetailResponse | null>(null)
   const [detailError, setDetailError] = useState<string | null>(null)
@@ -204,13 +206,16 @@ function SkillBrowserModal({ sessionId, api, t, onClose }: SkillBrowserEntryProp
           </div>
         </div>
         <main className="qx-sb-main">
+          {catalog && skills.length > 0 && (
+            <Dashboard skills={skills} activeCategory={activeCategory} onCategorySelect={setActiveCategory} t={t} />
+          )}
           {catalog && <div className="qx-sb-context" title={catalog.cwd}>{t('dialog.cwd', { cwd: catalog.cwd })}</div>}
           {catalog && catalogError && <p className="qx-sb-notice" role="status">{t('status.refreshError', { message: catalogError })}</p>}
           {catalog && !catalog.complete && <p className="qx-sb-notice">{t('status.incomplete')}</p>}
           {!catalog && loading && <CatalogState title={t('status.loading')} t={t} />}
           {catalogError && !catalog && <CatalogState title={t('status.error', { message: catalogError })} retry={() => { void loadCatalog() }} t={t} />}
           {catalog && skills.length === 0 && <CatalogState title={t('status.empty')} t={t} />}
-          {catalog && skills.length > 0 && <SkillExplorer skills={skills} query={query} onQueryChange={setQuery} t={t} onOpen={setSelectedName} />}
+          {catalog && skills.length > 0 && <SkillExplorer skills={skills} query={query} onQueryChange={setQuery} t={t} onOpen={setSelectedName} activeCategory={activeCategory} onActiveCategoryChange={setActiveCategory} />}
         </main>
         {selectedName && (
           <SkillDetail

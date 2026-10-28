@@ -1,5 +1,6 @@
 import type { BrowserSkillSummary } from '../contracts.ts'
 import { getSkillMetadata } from '../skill-metadata.ts'
+import { nameColorOf } from './nameColor.ts'
 import type { SkillBrowserTranslate } from './SkillBrowser.tsx'
 import type { SkillBrowserLocaleKey } from './locales.ts'
 
@@ -35,8 +36,9 @@ export function SkillCard({ skill, t, categoryLabel, onOpen, expanded, onToggle,
     <article
       className="qx-sb-card"
       data-skill-card={skill.name}
+      style={{ '--qxsb-accent': nameColorOf(skill.name) } as React.CSSProperties}
     >
-      <div className="qx-sb-card-heading"><button type="button" className="qx-sb-card-name" onClick={() => onOpen(skill.name)}>{skill.name}</button><span className="qx-sb-category-tag">{categoryLabel}</span></div>
+      <div className="qx-sb-card-heading"><button type="button" className="qx-sb-card-name" onClick={() => onOpen(skill.name)}>{skill.name}</button><span className="qx-sb-category-tag" style={{ '--qxsb-accent': nameColorOf(categoryLabel) } as React.CSSProperties}>{categoryLabel}</span></div>
       <div className="qx-sb-card-body">
         <div className="qx-sb-io"><span>{l('适用于', 'Use for')}</span><div title={skill.metadataError}>{purpose}</div></div>
         <div className="qx-sb-io"><span>{l('输入', 'Input')}</span><div>{metadata?.required ?? l('待确认，请查看技能说明', 'Unconfirmed; see skill instructions')}</div></div>

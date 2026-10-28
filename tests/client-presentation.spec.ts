@@ -17,7 +17,9 @@ describe('skill browser presentation contract', () => {
     expect(SKILL_BROWSER_STYLES).toContain('--dsw-alias-')
     expect(SKILL_BROWSER_STYLES).toContain('-webkit-line-clamp:3')
     expect(SKILL_BROWSER_STYLES).toContain('grid-template-columns:minmax(0,1fr)')
-    expect(SKILL_BROWSER_STYLES).toContain('background:#315fca;color:#fff')
+    expect(SKILL_BROWSER_STYLES).toContain('border-color:var(--dsw-alias-interactive-primary')
+    expect(SKILL_BROWSER_STYLES).toContain('--qxsb-c1:')
+    expect(SKILL_BROWSER_STYLES).toContain('@container')
 
     const disposeOwned = installSkillBrowserStyles()
     const disposeDuplicate = installSkillBrowserStyles()

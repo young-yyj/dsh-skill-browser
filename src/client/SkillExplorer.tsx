@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { BrowserSkillSummary } from '../contracts.ts'
 import { BROWSER_CATEGORIES, getSkillMetadata } from '../skill-metadata.ts'
 import { DEFAULT_FILTERS, filterCatalog, type FilterState } from './skill-filters.ts'
@@ -11,12 +11,14 @@ const RESULTS = ['文本答复', '代码改动', '仓库操作', '浏览器操�
 const INPUTS = ['需求描述', '文本素材', 'URL', 'PDF', 'HTML', 'Markdown', 'DOCX', 'PPTX', 'XLSX', 'XLSM', 'CSV', 'TSV', '代码项目', '日志', '技能文件', 'Qt TS', '本机目录']
 const FORMAT_LABELS: Record<string, string> = { DOCX: 'Word · DOCX', PPTX: 'PPT · PPTX', XLSX: 'Excel · XLSX', PNG: 'PNG' }
 
-export function SkillExplorer({ skills, query, onQueryChange, t, onOpen }: {
+export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeCategory, onActiveCategoryChange }: {
   skills: BrowserSkillSummary[]
   query: string
   onQueryChange: (query: string) => void
   t: SkillBrowserTranslate
   onOpen: (name: string) => void
+  activeCategory: string | null
+  onActiveCategoryChange: (category: string | null) => void
 }): React.JSX.Element {
   const [selection, setSelection] = useState<FilterState>({ ...DEFAULT_FILTERS, inputs: [], outputs: [] })
   const filters = useMemo(() => ({ ...selection, query }), [selection, query])
@@ -27,8 +29,13 @@ export function SkillExplorer({ skills, query, onQueryChange, t, onOpen }: {
   const l = (zh: string, en: string): string => english ? en : zh
   const patch = (next: Partial<FilterState>): void => {
     if (next.query !== undefined) onQueryChange(next.query)
+    if (next.category !== undefined) onActiveCategoryChange(next.category === 'all' ? null : next.category)
     setSelection(previous => ({ ...previous, ...next }))
   }
+  useEffect(() => {
+    const category = activeCategory ?? 'all'
+    setSelection(previous => previous.category === category ? previous : { ...previous, category })
+  }, [activeCategory])
   const clear = (): void => { patch({ ...DEFAULT_FILTERS, inputs: [], outputs: [], query: '' }) }
   const toggle = (key: 'outputs' | 'inputs', value: string): void => {
     patch({ [key]: selection[key].includes(value) ? selection[key].filter(item => item !== value) : [...selection[key], value] })

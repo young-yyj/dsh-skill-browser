@@ -1,4 +1,5 @@
 import type { SkillDetailResponse } from '../contracts.ts'
+import { nameColorOf } from './nameColor.ts'
 import type { SkillBrowserTranslate } from './SkillBrowser.tsx'
 
 export interface SkillDetailProps {
@@ -24,7 +25,7 @@ export function SkillDetail({ name, detail, loading, error, t, onClose, onRetry 
   return (
     <>
       <button className="qx-sb-drawer-scrim" type="button" aria-label={t('action.close')} onClick={onClose} />
-      <aside className="qx-sb-drawer" data-skill-detail aria-label={t('detail.title')}>
+      <aside className="qx-sb-drawer" data-skill-detail aria-label={t('detail.title')} style={{ '--qxsb-accent': nameColorOf(name) } as React.CSSProperties}>
         <header className="qx-sb-drawer-head">
           <div>
             <div className="qx-sb-drawer-kicker">{t('detail.title')}</div>
