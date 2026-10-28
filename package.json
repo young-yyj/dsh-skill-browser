@@ -1,6 +1,6 @@
 {
   "name": "dsh-skill-browser",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "description": "Read-only skill browser for DeepSeek Harness",
   "license": "MIT",
