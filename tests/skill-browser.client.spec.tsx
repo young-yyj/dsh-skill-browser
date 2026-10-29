@@ -233,6 +233,6 @@ describe('SkillBrowserPanel', () => {
     await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
     expect(document.querySelector('[data-skill-card="pdf"]')?.textContent).toContain('user')
     expect(document.querySelector('[data-skill-card="frontend-design"]')?.textContent).toContain('内置')
-    expect(document.querySelector('[data-kpi="total"]')?.textContent).toBe('3')
+    expect(document.querySelector('[data-overview]')?.textContent).toContain('3')
   })
 })

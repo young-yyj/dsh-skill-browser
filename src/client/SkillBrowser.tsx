@@ -64,6 +64,7 @@ export function SkillBrowserPanel({ api, t }: SkillBrowserPanelProps): React.JSX
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [needsReview, setNeedsReview] = useState(false)
   const [selectedName, setSelectedName] = useState<string | null>(null)
   const [detail, setDetail] = useState<SkillDetailResponse | null>(null)
   const [detailError, setDetailError] = useState<string | null>(null)
@@ -154,6 +155,15 @@ export function SkillBrowserPanel({ api, t }: SkillBrowserPanelProps): React.JSX
         closeDetail()
         return
       }
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        const target = event.target as HTMLElement | null
+        const typing = target !== null && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
+        if (!typing && selectedNameRef.current === null) {
+          event.preventDefault()
+          searchRef.current?.focus()
+          return
+        }
+      }
       if (dialogRef.current) trapTab(event, dialogRef.current)
     }
     document.addEventListener('keydown', onKeyDown)
@@ -199,7 +209,7 @@ export function SkillBrowserPanel({ api, t }: SkillBrowserPanelProps): React.JSX
       </div>
       <main className="qx-sb-main">
         {catalog && skills.length > 0 && (
-          <Dashboard skills={skills} activeCategory={activeCategory} onCategorySelect={setActiveCategory} t={t} />
+          <Dashboard skills={skills} pendingActive={needsReview} onPendingToggle={() => setNeedsReview(current => !current)} t={t} />
         )}
         {catalog && <div className="qx-sb-context" title={catalog.cwd}>{t('dialog.cwd', { cwd: catalog.cwd })}</div>}
         {catalog && catalogError && <p className="qx-sb-notice" role="status">{t('status.refreshError', { message: catalogError })}</p>}
@@ -207,7 +217,7 @@ export function SkillBrowserPanel({ api, t }: SkillBrowserPanelProps): React.JSX
         {!catalog && loading && <CatalogState title={t('status.loading')} t={t} />}
         {catalogError && !catalog && <CatalogState title={t('status.error', { message: catalogError })} retry={() => { void loadCatalog() }} t={t} />}
         {catalog && skills.length === 0 && <CatalogState title={t('status.empty')} t={t} />}
-        {catalog && skills.length > 0 && <SkillExplorer skills={skills} query={query} onQueryChange={setQuery} t={t} onOpen={setSelectedName} activeCategory={activeCategory} onActiveCategoryChange={setActiveCategory} />}
+        {catalog && skills.length > 0 && <SkillExplorer skills={skills} query={query} onQueryChange={setQuery} t={t} onOpen={setSelectedName} activeCategory={activeCategory} onActiveCategoryChange={setActiveCategory} needsReview={needsReview} onNeedsReviewToggle={() => setNeedsReview(current => !current)} />}
       </main>
       {selectedName && (
         <SkillDetail

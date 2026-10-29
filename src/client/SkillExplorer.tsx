@@ -11,7 +11,7 @@ const RESULTS = ['文本答复', '代码改动', '仓库操作', '浏览器操�
 const INPUTS = ['需求描述', '文本素材', 'URL', 'PDF', 'HTML', 'Markdown', 'DOCX', 'PPTX', 'XLSX', 'XLSM', 'CSV', 'TSV', '代码项目', '日志', '技能文件', 'Qt TS', '本机目录']
 const FORMAT_LABELS: Record<string, string> = { DOCX: 'Word · DOCX', PPTX: 'PPT · PPTX', XLSX: 'Excel · XLSX', PNG: 'PNG' }
 
-export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeCategory, onActiveCategoryChange }: {
+export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeCategory, onActiveCategoryChange, needsReview, onNeedsReviewToggle }: {
   skills: BrowserSkillSummary[]
   query: string
   onQueryChange: (query: string) => void
@@ -19,6 +19,8 @@ export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeC
   onOpen: (name: string) => void
   activeCategory: string | null
   onActiveCategoryChange: (category: string | null) => void
+  needsReview: boolean
+  onNeedsReviewToggle: () => void
 }): React.JSX.Element {
   const [selection, setSelection] = useState<FilterState>({ ...DEFAULT_FILTERS, inputs: [], outputs: [] })
   const filters = useMemo(() => ({ ...selection, query }), [selection, query])
@@ -51,10 +53,11 @@ export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeC
   if (filters.category !== 'all') alternatives.push({ label: l('不限用途分类', 'Any category'), change: { category: 'all' } })
   if (filters.mode === 'all' && filters.outputs.length > 1) alternatives.push({ label: l('输出改为任意匹配', 'Match any output'), change: { mode: 'any' } })
   if (filters.deliverableOnly) alternatives.push({ label: l('包含中间 / 预览文件', 'Include intermediate / preview files'), change: { deliverableOnly: false } })
+  if (filters.needsReview) alternatives.push({ label: l('包含全部技能', 'Include all skills'), change: { needsReview: false } })
   if (query) alternatives.push({ label: l('移除搜索词', 'Remove search text'), change: { query: '' } })
   const categories = [...BROWSER_CATEGORIES, '其他'].filter(category => skills.some(skill => (getSkillMetadata(skill.name)?.category ?? '其他') === category))
   return <section className="qx-sb-explorer">
-    <div className="qx-sb-filter-box">
+    <div className="qx-sb-filter-box" title={l('标签数字：在其他组条件下可匹配的技能数；多选结果有重叠，数字不能相加。', 'Counts retain other filter groups; overlapping results cannot be added together.')}>
       <div className="qx-sb-filter-row"><span>{l('想要什么输出', 'Desired output')}</span><div>
         <div className="qx-sb-pills" role="group" aria-label={l('输出格式', 'Output formats')}>
           <button className="qx-sb-pill" type="button" aria-pressed={!filters.outputs.length} onClick={() => patch({ outputs: [] })}>{l('不限', 'Any')}</button>
@@ -81,10 +84,10 @@ export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeC
         <p>{l('输入类型表示支持的材料，不代表每项都必须提供；卡片列明具体条件。', 'Input types are supported materials, not a list of mandatory requirements.')}</p>
       </details>
     </div>
-    <p className="qx-sb-counter-note">{l('标签数字：在其他组条件下可匹配的技能数；多选结果有重叠，数字不能相加。', 'Counts retain other filter groups; overlapping results cannot be added together.')}</p>
     <div className="qx-sb-results-head"><span role="status">{l('找到', 'Found')} <strong>{filtered.length}</strong> {l('个技能', 'skills')} / {skills.length}</span><button className="qx-sb-button" type="button" onClick={clear}>{l('清空筛选', 'Clear filters')}</button></div>
     <div className="qx-sb-active-filters">
       {filters.category !== 'all' && <button type="button" onClick={() => patch({ category: 'all' })}>{filters.category} ×</button>}
+      {filters.needsReview && <button type="button" onClick={() => patch({ needsReview: false })}>{l('待补元数据', 'Pending metadata')} ×</button>}
       {(['outputs', 'inputs'] as const).flatMap(key => filters[key].map(value => <button type="button" key={key + value} onClick={() => toggle(key, value)}>{key === 'outputs' ? l('输出', 'Output') : l('输入', 'Input')}：{value} ×</button>))}
       {filters.noUpload && <button type="button" onClick={() => patch({ noUpload: false })}>{l('无需已有文件', 'No existing file')} ×</button>}
       {filters.deliverableOnly && <button type="button" onClick={() => patch({ deliverableOnly: false })}>{l('排除中间文件', 'Exclude intermediate files')} ×</button>}

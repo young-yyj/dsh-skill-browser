@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { BrowserSkillSummary } from '../src/contracts.ts'
-import { dashboardStatsOf } from '../src/client/dashboard-model.ts'
+import { overviewStatsOf } from '../src/client/dashboard-model.ts'
 import { paletteIndexOf, nameColorOf } from '../src/client/nameColor.ts'
 
 function skill(partial: Partial<BrowserSkillSummary> & { name: string }): BrowserSkillSummary {
   return {
     description: '',
-    source: 'user',
+    source: 'user-dsh',
     provider: 'filesystem',
     modelInvocable: true,
     userInvocable: true,
@@ -29,31 +29,29 @@ describe('nameColor', () => {
   })
 })
 
-describe('dashboardStatsOf', () => {
-  it('derives KPI counts, category buckets and source buckets', () => {
-    const stats = dashboardStatsOf([
-      skill({ name: 'pdf', category: 'documents' }),
-      skill({ name: 'agent-browser', category: 'system', userInvocable: false }),
-      skill({ name: 'frontend-design', category: 'design' }),
-      skill({ name: 'no-meta', category: 'other', metadataError: 'bad' }),
-    ], '其他')
-    expect(stats.total).toBe(4)
-    expect(stats.userInvocable).toBe(3)
-    expect(stats.modelInvocable).toBe(4)
-    expect(stats.metadataReady).toBe(3)
-    expect(stats.sources).toEqual([
-      { key: 'user', label: 'user', value: 4 },
+describe('overviewStatsOf', () => {
+  it('derives totals, category/source diversity and pending review list', () => {
+    const stats = overviewStatsOf([
+      skill({ name: 'pdf' }),
+      skill({ name: 'agent-browser', source: 'bundled' }),
+      skill({ name: 'frontend-design' }),
+      skill({ name: 'no-meta', metadataError: 'bad' }),
+      skill({ name: 'also-no-meta' }),
     ])
-    const labels = stats.categories.map(bucket => bucket.label)
-    expect(labels).toEqual(expect.arrayContaining(['办公文件', '自动化与实用工具', '界面与视觉设计', '其他']))
-    const others = stats.categories.find(bucket => bucket.label === '其他')
-    expect(others?.value).toBe(1)
+    expect(stats.total).toBe(5)
+    expect(stats.categories).toBeGreaterThan(0)
+    expect(stats.sources).toBe(2)
+    expect(stats.singleSource).toBe(false)
+    expect(stats.metadataReady).toBe(3)
+    expect(stats.pendingReview).toEqual(['no-meta', 'also-no-meta'])
   })
 
-  it('handles an empty catalog', () => {
-    const stats = dashboardStatsOf([], '其他')
-    expect(stats.total).toBe(0)
-    expect(stats.categories).toEqual([])
-    expect(stats.sources).toEqual([])
+  it('flags a single-source catalog and an empty one', () => {
+    const single = overviewStatsOf([skill({ name: 'pdf' })])
+    expect(single.singleSource).toBe(true)
+    const empty = overviewStatsOf([])
+    expect(empty.total).toBe(0)
+    expect(empty.pendingReview).toEqual([])
+    expect(empty.singleSource).toBe(true)
   })
 })

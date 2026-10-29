@@ -1,43 +1,36 @@
-/** 仪表板数据派生：仅依赖 BrowserSkillSummary[]，不触碰 host 接口。
- * 分类用 skill-metadata 的审核分类(与筛选器一致)，无元数据时归入"其他"。 */
+/** 概览条数据派生：仅依赖 BrowserSkillSummary[]，不触碰 host 接口。
+ * 首屏以单行概览替代统计卡与图表；唯一可行动信号是"待补元数据"计数（可点击筛选）。 */
 
 import type { BrowserSkillSummary } from '../contracts.ts'
 import { getSkillMetadata } from '../skill-metadata.ts'
 
-export interface Bucket {
-  key: string
-  label: string
-  value: number
-}
-
-export interface DashboardStats {
+export interface OverviewStats {
   total: number
-  userInvocable: number
-  modelInvocable: number
-  categories: Bucket[]
-  sources: Bucket[]
+  categories: number
+  sources: number
   metadataReady: number
+  /** 审核元数据缺失（或解析失败）的技能名列表——可点击筛选的依据。 */
+  pendingReview: string[]
+  /** 条件化显示：同一维度只有一个值时，统计没有信息量。 */
+  singleSource: boolean
 }
 
-export function dashboardStatsOf(skills: readonly BrowserSkillSummary[], fallbackCategory: string): DashboardStats {
-  const userInvocable = skills.filter(skill => skill.userInvocable).length
-  const modelInvocable = skills.filter(skill => skill.modelInvocable).length
-  const metadataReady = skills.filter(skill => !skill.metadataError && getSkillMetadata(skill.name) !== undefined).length
-
-  const categoryCount = new Map<string, number>()
+export function overviewStatsOf(skills: readonly BrowserSkillSummary[]): OverviewStats {
+  const categories = new Set<string>()
+  const sources = new Set<string>()
+  const pendingReview: string[] = []
   for (const skill of skills) {
-    const label = getSkillMetadata(skill.name)?.category ?? fallbackCategory
-    categoryCount.set(label, (categoryCount.get(label) ?? 0) + 1)
+    const metadata = getSkillMetadata(skill.name)
+    categories.add(metadata?.category ?? 'other')
+    sources.add(skill.source)
+    if (skill.metadataError || metadata === undefined) pendingReview.push(skill.name)
   }
-  const categories = [...categoryCount.entries()]
-    .map(([label, value]) => ({ key: label, label, value }))
-    .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label, 'zh'))
-
-  const sourceCount = new Map<string, number>()
-  for (const skill of skills) sourceCount.set(skill.source, (sourceCount.get(skill.source) ?? 0) + 1)
-  const sources = [...sourceCount.entries()]
-    .map(([key, value]) => ({ key, label: key, value }))
-    .sort((left, right) => right.value - left.value || left.key.localeCompare(right.key, 'en'))
-
-  return { total: skills.length, userInvocable, modelInvocable, categories, sources, metadataReady }
+  return {
+    total: skills.length,
+    categories: categories.size,
+    sources: sources.size,
+    metadataReady: skills.length - pendingReview.length,
+    pendingReview,
+    singleSource: sources.size <= 1,
+  }
 }

@@ -9,11 +9,13 @@ export interface FilterState {
   mode: 'any' | 'all'
   deliverableOnly: boolean
   noUpload: boolean
+  /** 只看缺审核元数据（用途/输入/输出标注未整理或解析失败）的技能。 */
+  needsReview: boolean
 }
 
 export const DEFAULT_FILTERS: FilterState = {
   category: 'all', query: '', outputs: [], inputs: [], mode: 'any',
-  deliverableOnly: false, noUpload: false,
+  deliverableOnly: false, noUpload: false, needsReview: false,
 }
 
 export function filterCatalog(skills: readonly BrowserSkillSummary[], filters: FilterState): BrowserSkillSummary[] {
@@ -25,6 +27,7 @@ export function filterCatalog(skills: readonly BrowserSkillSummary[], filters: F
       metadata?.purpose, metadata?.category, metadata?.required, metadata?.optional, metadata?.note,
       ...(metadata?.inputs ?? []), ...(metadata?.outputs.map(output => output.format) ?? [])]
     if (query && !searchable.join(' ').toLowerCase().includes(query)) return []
+    if (filters.needsReview && (metadata !== undefined && !skill.metadataError)) return []
     if (filters.noUpload && metadata?.noUpload !== true) return []
     if (filters.inputs.length && !filters.inputs.some(input => metadata?.inputs.includes(input))) return []
     const outputs = (metadata?.outputs ?? []).filter(output => !filters.deliverableOnly || output.role !== 'intermediate')
