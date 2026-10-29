@@ -124,7 +124,7 @@ describe('SkillBrowserPanel', () => {
     await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
     expect(document.querySelector('[data-skill-card="pdf"]')?.textContent).toContain('暂无简介')
     expect(document.querySelector('[data-skill-card="agent-browser"]')?.textContent).toContain('技能元数据解析失败')
-    await click(buttonNamed('agent-browser'))
+    await click(document.querySelector<HTMLElement>('[data-skill-card="agent-browser"]')!)
     expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('Invalid YAML')
     expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
   })
@@ -173,16 +173,17 @@ describe('SkillBrowserPanel', () => {
     await click(buttonNamed('办公文件'))
     expect(document.querySelectorAll('[data-skill-card]')).toHaveLength(1)
 
-    await click(buttonNamed('pdf'))
+    await click(document.querySelector<HTMLElement>('[data-skill-card="pdf"]')!)
     expect(api.detail).toHaveBeenCalledWith('qx-skill-browser-panel', 'pdf', expect.any(AbortSignal))
     expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
-    expect(document.querySelector<HTMLElement>('.qx-sb-drawer-body')?.tabIndex).toBe(0)
+    expect(document.querySelector('.qx-sb-modal')).not.toBeNull()
     expect(document.querySelector('[data-skill-detail] script')).toBeNull()
     expect((window as typeof window & { __unsafe?: boolean }).__unsafe).toBeUndefined()
 
     await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })))
     expect(document.querySelector('[data-skill-detail]')).toBeNull()
     expect(document.querySelector('.qx-sb-page')).not.toBeNull()
+    expect(document.activeElement).toBe(document.querySelector('[data-skill-card="pdf"]'))
   })
 
   it('reloads on catalog events and exposes empty search feedback', async () => {
@@ -206,7 +207,7 @@ describe('SkillBrowserPanel', () => {
   it('shows refresh failures beside stale data and reloads an open detail after catalog refresh', async () => {
     const api = new FakeClient()
     await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
-    await click(buttonNamed('pdf'))
+    await click(document.querySelector<HTMLElement>('[data-skill-card="pdf"]')!)
     expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
 
     api.catalog.mockRejectedValueOnce(new Error('refresh unavailable'))

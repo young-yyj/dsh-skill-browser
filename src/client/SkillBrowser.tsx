@@ -108,7 +108,7 @@ export function SkillBrowserPanel({ api, t }: SkillBrowserPanelProps): React.JSX
       if (!name) return
       const card = [...(dialogRef.current?.querySelectorAll<HTMLElement>('[data-skill-card]') ?? [])]
         .find(element => element.dataset.skillCard === name)
-      card?.querySelector<HTMLElement>('.qx-sb-card-name')?.focus()
+      card?.focus()
     })
   }, [])
 
@@ -142,7 +142,7 @@ export function SkillBrowserPanel({ api, t }: SkillBrowserPanelProps): React.JSX
     }).finally(() => {
       if (!controller.signal.aborted && generation === detailGeneration.current) setDetailLoading(false)
     })
-    queueMicrotask(() => dialogRef.current?.querySelector<HTMLElement>('.qx-sb-drawer .qx-sb-icon-button')?.focus())
+    queueMicrotask(() => dialogRef.current?.querySelector<HTMLElement>('.qx-sb-modal .qx-sb-icon-button')?.focus())
     return () => controller.abort()
   }, [api, detailRefreshKey, selectedName, sessionId])
 

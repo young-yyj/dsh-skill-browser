@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { BrowserSkillSummary } from '../contracts.ts'
 import { BROWSER_CATEGORIES, getSkillMetadata } from '../skill-metadata.ts'
 import { DEFAULT_FILTERS, filterCatalog, type FilterState } from './skill-filters.ts'
@@ -23,8 +23,6 @@ export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeC
   const [selection, setSelection] = useState<FilterState>({ ...DEFAULT_FILTERS, inputs: [], outputs: [] })
   const filters = useMemo(() => ({ ...selection, query }), [selection, query])
   const filtered = useMemo(() => filterCatalog(skills, filters), [skills, filters])
-  const grid = useRef<HTMLDivElement>(null)
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const english = t('category.all') === 'All'
   const l = (zh: string, en: string): string => english ? en : zh
   const patch = (next: Partial<FilterState>): void => {
@@ -40,52 +38,6 @@ export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeC
   const toggle = (key: 'outputs' | 'inputs', value: string): void => {
     patch({ [key]: selection[key].includes(value) ? selection[key].filter(item => item !== value) : [...selection[key], value] })
   }
-  const rows = useCallback((): HTMLElement[][] => {
-    const groups: { top: number, cards: HTMLElement[] }[] = []
-    for (const card of grid.current?.querySelectorAll<HTMLElement>('[data-skill-card]') ?? []) {
-      const top = card.getBoundingClientRect().top
-      let group = groups.find(row => Math.abs(row.top - top) < 2)
-      if (!group) { group = { top, cards: [] }; groups.push(group) }
-      group.cards.push(card)
-    }
-    return groups.map(group => group.cards)
-  }, [])
-  const toggleRow = (name: string): void => {
-    const row = rows().find(items => items.some(card => card.dataset.skillCard === name)) ?? []
-    setExpanded(previous => {
-      const next = new Set(previous)
-      for (const card of row) {
-        const key = card.dataset.skillCard!
-        if (previous.has(name)) next.delete(key)
-        else next.add(key)
-      }
-      return next
-    })
-  }
-  useLayoutEffect(() => {
-    setExpanded(new Set())
-  }, [filtered])
-  useLayoutEffect(() => {
-    if (!grid.current || typeof ResizeObserver === 'undefined') return
-    let width = grid.current.getBoundingClientRect().width
-    const observer = new ResizeObserver(entries => {
-      const nextWidth = entries[0]?.contentRect.width ?? width
-      if (Math.abs(nextWidth - width) < 1) return
-      width = nextWidth
-      const currentRows = rows()
-      setExpanded(previous => {
-        const next = new Set(previous)
-        for (const row of currentRows) {
-          if (row.some(card => previous.has(card.dataset.skillCard!))) {
-            for (const card of row) next.add(card.dataset.skillCard!)
-          }
-        }
-        return next
-      })
-    })
-    observer.observe(grid.current)
-    return () => observer.disconnect()
-  }, [rows, filtered])
   const count = (change: Partial<FilterState>): number => filterCatalog(skills, { ...filters, ...change }).length
   const outputChip = (format: string): React.JSX.Element => (
     <button key={format} type="button" className="qx-sb-pill qx-sb-output-pill" data-output={format}
@@ -142,9 +94,9 @@ export function SkillExplorer({ skills, query, onQueryChange, t, onOpen, activeC
       <strong>{t('status.noResults')}</strong><p>{l('可以保留目标输出，先放宽一项限制：', 'Keep your target output and relax one restriction:')}</p>
       <div className="qx-sb-relaxations">{alternatives.map(option => ({ ...option, count: count(option.change) })).filter(option => option.count > 0).map(option => <button type="button" className="qx-sb-button" key={option.label} onClick={() => patch(option.change)}>{option.label} · {option.count}</button>)}</div>
     </div></div>}
-    <div className="qx-sb-grid" ref={grid}>
-      {filtered.map(skill => <SkillCard key={skill.name} skill={skill} t={t} categoryLabel={getSkillMetadata(skill.name)?.category ?? l('其他', 'Other')} onOpen={onOpen} expanded={expanded.has(skill.name)} onToggle={() => toggleRow(skill.name)} selectedOutputs={filters.outputs} deliverableOnly={filters.deliverableOnly} />)}
+    <div className="qx-sb-grid">
+      {filtered.map(skill => <SkillCard key={skill.name} skill={skill} t={t} categoryLabel={getSkillMetadata(skill.name)?.category ?? l('其他', 'Other')} onOpen={onOpen} selectedOutputs={filters.outputs} deliverableOnly={filters.deliverableOnly} />)}
     </div>
-    <p className="qx-sb-counter-note">{l('格式资料按已审核的技能说明整理；输出依任务选择。点击技能名查看原始 SKILL.md。', 'Format metadata is curated from skill instructions; outputs depend on the task. Select a skill name to view SKILL.md.')}</p>
+    <p className="qx-sb-counter-note">{l('格式资料按已审核的技能说明整理；输出依任务选择。点击卡片查看技能详情。', 'Format metadata is curated from skill instructions; outputs depend on the task. Select a card to view the skill detail.')}</p>
   </section>
 }
