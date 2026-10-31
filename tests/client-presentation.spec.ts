@@ -29,8 +29,9 @@ describe('skill browser presentation contract', () => {
     expect(SKILL_BROWSER_STYLES).toContain('.qx-sb-detail-flow{')
     expect(SKILL_BROWSER_STYLES).not.toContain('qx-sb-backdrop')
     expect(SKILL_BROWSER_STYLES).not.toContain('qx-sb-dialog')
-    expect(SKILL_BROWSER_STYLES).not.toContain('qx-sb-trigger')
+    expect(SKILL_BROWSER_STYLES).not.toContain('.qx-sb-trigger{')
     expect(SKILL_BROWSER_STYLES).not.toContain('qx-sb-drawer')
+    expect(SKILL_BROWSER_STYLES).not.toContain('qx-sb-raw')
 
     const disposeOwned = installSkillBrowserStyles()
     const disposeDuplicate = installSkillBrowserStyles()

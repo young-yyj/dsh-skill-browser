@@ -125,8 +125,14 @@ describe('SkillBrowserPanel', () => {
     expect(document.querySelector('[data-skill-card="pdf"]')?.textContent).toContain('暂无简介')
     expect(document.querySelector('[data-skill-card="agent-browser"]')?.textContent).toContain('技能元数据解析失败')
     await click(document.querySelector<HTMLElement>('[data-skill-card="agent-browser"]')!)
-    expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('Invalid YAML')
-    expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
+    // 有审核元数据的技能保留输入/输出页签；正文含解析失败占位提示（原文页承载）
+    expect(document.querySelector('.qx-sb-modal-tabs')?.textContent).toContain('输入')
+    expect(document.querySelector('.qx-sb-detail-purpose')?.textContent).toBeTruthy()
+    // 原文页签承载解析失败与内容
+    await click(document.querySelector<HTMLElement>('.qx-sb-modal-tab[data-tab="raw"]')!)
+    const pres = [...document.querySelectorAll('.qx-sb-pre')]
+    expect(pres.some(pre => pre.textContent?.includes('Invalid YAML'))).toBe(true)
+    expect(pres.some(pre => pre.textContent?.includes('# PDF'))).toBe(true)
   })
 
   it('filters by output format and offers a counted relaxation for incompatible input', async () => {
@@ -175,7 +181,9 @@ describe('SkillBrowserPanel', () => {
 
     await click(document.querySelector<HTMLElement>('[data-skill-card="pdf"]')!)
     expect(api.detail).toHaveBeenCalledWith('qx-skill-browser-panel', 'pdf', expect.any(AbortSignal))
-    expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
+    expect(document.querySelector('.qx-sb-detail-purpose')?.textContent).toContain('创建、提取、合并、拆分和处理')
+    await click(document.querySelector<HTMLElement>('.qx-sb-modal-tab[data-tab="raw"]')!)
+    expect([...document.querySelectorAll('.qx-sb-pre')].some(pre => pre.textContent?.includes('# PDF'))).toBe(true)
     expect(document.querySelector('.qx-sb-modal')).not.toBeNull()
     expect(document.querySelector('[data-skill-detail] script')).toBeNull()
     expect((window as typeof window & { __unsafe?: boolean }).__unsafe).toBeUndefined()
@@ -208,7 +216,8 @@ describe('SkillBrowserPanel', () => {
     const api = new FakeClient()
     await act(async () => root.render(<SkillBrowserPanel api={api} t={translator} />))
     await click(document.querySelector<HTMLElement>('[data-skill-card="pdf"]')!)
-    expect(document.querySelector('[data-skill-detail]')?.textContent).toContain('# PDF')
+    await click(document.querySelector<HTMLElement>('.qx-sb-modal-tab[data-tab="raw"]')!)
+    expect([...document.querySelectorAll('.qx-sb-pre')].some(pre => pre.textContent?.includes('# PDF'))).toBe(true)
 
     api.catalog.mockRejectedValueOnce(new Error('refresh unavailable'))
     await act(async () => {
