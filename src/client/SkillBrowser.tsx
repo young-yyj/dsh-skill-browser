@@ -177,7 +177,7 @@ export function SkillBrowserPanel({ api, t }: SkillBrowserPanelProps): React.JSX
     <div ref={dialogRef} className="qx-sb-page" role="region" aria-labelledby={titleId} tabIndex={-1}>
       <div className="qx-sb-header">
         <div className="qx-sb-heading">
-          <span className="qx-sb-mark" aria-hidden="true">🧩</span>
+          <span className="qx-sb-mark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 128 128" aria-hidden="true"><defs><linearGradient id="qxsb-logo-tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4d83ff"/><stop offset="1" stop-color="#8b72f0"/></linearGradient></defs><rect x="4" y="4" width="120" height="120" rx="28" fill="url(#qxsb-logo-tile)"/><g transform="translate(64 64)"><path d="M-8 -30a8 8 0 0 1 16 0V-24h12a6 6 0 0 1 6 6v12h6a8 8 0 0 1 0 16h-6v12a6 6 0 0 1-6 6H-18a6 6 0 0 1-6-6V-18a6 6 0 0 1 6-6h10Z" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="8" cy="18" r="4.5" fill="#ffffff" opacity="0.9"/></g></svg></span>
           <div>
             <h1 id={titleId} className="qx-sb-title">{t('dialog.title')}</h1>
             <p className="qx-sb-context">

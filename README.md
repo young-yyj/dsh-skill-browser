@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon.svg" width="96" alt="dsh-skill-browser logo"></p>
+
 # DSH Skill Browser
 
 一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的本地只读技能浏览插件。它在 DSH Web 左侧栏加入“技能面板”一级入口，用概览条、搜索、分类和详情弹窗展示 DSH Home `skills` 目录中的技能。
