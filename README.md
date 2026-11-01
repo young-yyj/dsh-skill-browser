@@ -5,9 +5,9 @@
 <p align="center">一个面向 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 的本地只读技能浏览插件。它在 DSH Web 左侧栏加入“技能面板”一级入口，用概览条、搜索、分类和详情弹窗展示 DSH Home <code>skills</code> 目录中的技能。</p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/v/release/young-yyj/dsh-skill-browser?style=flat-square&label=version" alt="version">
-  <img src="https://img.shields.io/badge/DSH-0.2.x-orange?style=flat-square" alt="DSH 0.2.x">
-  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT">
+  <img src="https://img.shields.io/github/v/release/young-yyj/dsh-skill-browser?style=flat&label=version" alt="version">
+  <img src="https://img.shields.io/badge/DSH-0.2.x-orange?style=flat" alt="DSH 0.2.x">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat" alt="MIT">
 </p>
 
 <p align="center">
