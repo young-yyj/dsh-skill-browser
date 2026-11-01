@@ -15,5 +15,6 @@ artifacts/
 *.pfx
 .DS_Store
 Thumbs.db
+.local/
 .worktrees/
 docs/superpowers/plans/
