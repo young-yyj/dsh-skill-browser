@@ -36,6 +36,73 @@ const ROLE_KEYS = {
 
 type TabId = 'overview' | 'trigger' | 'inputs' | 'outputs' | 'raw'
 
+/** 行类型:仅按行首特征标记,行内语法一律不动——保持"一字不差"的忠实性。 */
+type LineKind = 'heading' | 'quote' | 'fence' | 'plain'
+
+function kindOf(line: string, inFence: boolean): LineKind {
+  if (/^```/.test(line)) return 'fence'
+  if (inFence) return 'plain'
+  if (/^#{1,6} /.test(line)) return 'heading'
+  if (/^> /.test(line)) return 'quote'
+  return 'plain'
+}
+
+interface RawSegment {
+  kind: 'frontmatter' | 'body'
+  lines: { text: string; kind: LineKind }[]
+}
+
+/** 拆分 frontmatter 与正文:行扫描,无解析、无重排,每个字符原样保留。 */
+function splitRaw(content: string): RawSegment[] {
+  const lines = content.split('\n')
+  const segments: RawSegment[] = []
+  if (lines[0]?.trim() === '---') {
+    const end = lines.findIndex((line, index) => index > 0 && line.trim() === '---')
+    if (end !== -1) {
+      segments.push({ kind: 'frontmatter', lines: lines.slice(0, end + 1).map(text => ({ text, kind: 'plain' as LineKind })) })
+      segments.push({ kind: 'body', lines: lines.slice(end + 1).map(text => ({ text, kind: kindOf(text, false) })) })
+      return segments
+    }
+  }
+  let inFence = false
+  segments.push({
+    kind: 'body',
+    lines: lines.map(line => {
+      const kind = kindOf(line, inFence)
+      if (kind === 'fence') inFence = !inFence
+      return { text: line, kind }
+    }),
+  })
+  return segments
+}
+
+function RawText({ content }: { content: string }): React.JSX.Element {
+  const [showFrontmatter, setShowFrontmatter] = useState(false)
+  const segments = splitRaw(content)
+  const frontmatter = segments.find(segment => segment.kind === 'frontmatter')
+  const body = segments.find(segment => segment.kind === 'body') ?? { lines: [] }
+  return (
+    <div className="qx-sb-rawdoc">
+      {frontmatter && (
+        <div className="qx-sb-rawdoc-fm">
+          <button type="button" className="qx-sb-rawdoc-fm-toggle" aria-expanded={showFrontmatter} onClick={() => setShowFrontmatter(current => !current)}>
+            {showFrontmatter ? '▾' : '▸'} frontmatter（{frontmatter.lines.length - 2} 行）
+          </button>
+          {showFrontmatter && <pre className="qx-sb-pre qx-sb-rawdoc-fm-pre">{frontmatter.lines.map(line => line.text).join('\n')}</pre>}
+        </div>
+      )}
+      <div className="qx-sb-rawdoc-body" role="figure" aria-label="SKILL.md">
+        {body.lines.map((line, index) => (
+          <div key={index} className={'qx-sb-rawdoc-line qx-sb-rawdoc-' + line.kind}>
+            {line.kind === 'fence' ? line.text.slice(0, 3) : line.text}
+            {line.kind === 'fence' && line.text.length > 3 && <span className="qx-sb-rawdoc-fence-lang">{line.text.slice(3)}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function SkillDetail({ name, detail, loading, error, t, onClose, onRetry }: SkillDetailProps): React.JSX.Element {
   const [tab, setTab] = useState<TabId>('overview')
   const english = t('category.all') === 'All'
@@ -214,7 +281,7 @@ export function SkillDetail({ name, detail, loading, error, t, onClose, onRetry 
           {detail && !loading && !error && activeTab === 'raw' && (
             <>
               {detail.metadataError && <pre className="qx-sb-pre">{t('detail.metaError')}{'\n'}{detail.metadataError}</pre>}
-              <pre className="qx-sb-pre">{detail.content}</pre>
+              <RawText content={detail.content} />
               {detail.contentTruncated && <p className="qx-sb-truncated">{t('detail.truncated')}</p>}
               {detail.metadata !== undefined && <section className="qx-sb-detail-section"><h3>{t('detail.metadata')}</h3><pre className="qx-sb-pre">{metadataText(detail.metadata)}</pre></section>}
             </>
