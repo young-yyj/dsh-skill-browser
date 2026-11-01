@@ -1,8 +1,18 @@
 <p align="center"><img src="assets/icon.svg" width="96" alt="dsh-skill-browser logo"></p>
 
-# DSH Skill Browser
+<h1 align="center">DSH Skill Browser</h1>
 
-一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的本地只读技能浏览插件。它在 DSH Web 左侧栏加入“技能面板”一级入口，用概览条、搜索、分类和详情弹窗展示 DSH Home `skills` 目录中的技能。
+<p align="center">一个面向 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 的本地只读技能浏览插件。它在 DSH Web 左侧栏加入“技能面板”一级入口，用概览条、搜索、分类和详情弹窗展示 DSH Home <code>skills</code> 目录中的技能。</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/v/release/young-yyj/dsh-skill-browser?style=flat-square&label=version" alt="version">
+  <img src="https://img.shields.io/badge/DSH-0.2.x-orange?style=flat-square" alt="DSH 0.2.x">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT">
+</p>
+
+<p align="center">
+  <a href="#下载安装推荐">下载最新版</a> · <a href="#功能">功能</a> · <a href="#安全边界">安全边界</a> · <a href="#环境要求">环境要求</a> · <a href="#许可证">许可证</a>
+</p>
 
 > 当前版本兼容 DeepSeek Harness `>=0.2.1-rc.4 <0.3.0-0`，开发与发布依赖固定为已实测的 `0.2.1-rc.4`。DSH 仍处于 Developer Preview：0.2.x 的后续版本由兼容范围直接覆盖，0.3 起须重新验证并更新范围。
 
