@@ -2,7 +2,7 @@
 
 <h1 align="center">DSH Skill Browser</h1>
 
-<p align="center">一个面向 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 的本地只读技能浏览插件。它在 DSH Web 左侧栏加入“技能面板”一级入口，用概览条、搜索、分类和详情弹窗展示 DSH Home <code>skills</code> 目录中的技能。</p>
+<p align="center">浏览、理解与排查 DeepSeek Harness 的技能库——本地只读、零侵入、即装即用的 <a href="https://github.com/deepseek-ai/deepseek-harness">DSH</a> 技能面板插件。</p>
 
 <p align="center">
   <img src="https://img.shields.io/github/v/release/young-yyj/dsh-skill-browser?style=flat&label=version" alt="version">
@@ -14,7 +14,29 @@
   <a href="#下载安装推荐">下载最新版</a> · <a href="#功能">功能</a> · <a href="#安全边界">安全边界</a> · <a href="#环境要求">环境要求</a> · <a href="#许可证">许可证</a>
 </p>
 
+> [!NOTE]
 > 当前版本兼容 DeepSeek Harness `>=0.2.1-rc.4 <0.3.0-0`，开发与发布依赖固定为已实测的 `0.2.1-rc.4`。DSH 仍处于 Developer Preview：0.2.x 的后续版本由兼容范围直接覆盖，0.3 起须重新验证并更新范围。
+
+## 目录
+
+- [功能](#功能)
+- [安全边界](#安全边界)
+- [环境要求](#环境要求)
+- [下载安装（推荐）](#下载安装推荐)
+- [从源码安装（开发者）](#从源码安装开发者)
+- [开发安装与即时验证](#开发安装与即时验证)
+- [开发与验证](#开发与验证)
+- [许可证](#许可证)
+
+## 界面预览
+
+| 面板总览 · 筛选与统计 | 详情弹窗 · 结构化信息 |
+| --- | --- |
+| ![技能面板总览：概览条、筛选器与卡片网格](docs/assets/panel-overview.png) | ![技能详情弹窗：五页签与输入输出摘要](docs/assets/dialog-overview.png) |
+
+| 触发方式 · 调用指引 | 原文 · frontmatter 折叠与行标记 |
+| --- | --- |
+| ![详情弹窗触发方式页：调用方式与触发词](docs/assets/dialog-trigger.png) | ![详情弹窗原文页：frontmatter 折叠与逐行标记](docs/assets/dialog-raw.png) |
 
 ## 功能
 
@@ -49,6 +71,8 @@
 - npm。
 
 ## 下载安装（推荐）
+
+> 适合：只想使用插件的普通用户。不需要 Git、Node.js 或源码。
 
 从 [v0.1.11 Release](https://github.com/young-yyj/dsh-skill-browser/releases/tag/v0.1.11) 安装已构建的包，无需 Git、下载源码或自行编译。当前已在 Windows 上验证，以下命令使用 PowerShell。
 
@@ -92,6 +116,8 @@ dsh web --no-open
 
 ## 从源码安装（开发者）
 
+> 适合：想在另一台电脑上从源码构建使用的开发者。
+
 稳定版插件安装在 DSH Home 的本地包目录中，与本仓库解耦；因此可以移动、删除或重新克隆本仓库，而不影响日常使用的 `web` profile。
 
 其他电脑首次安装时，先安装上述 Node.js、DSH 和 Git，然后在 PowerShell 中下载源码并构建：
@@ -128,6 +154,8 @@ dsh web --no-open
 如果安装被发布时间或完整性策略阻止，应等待包满足策略或排查安装来源，不要添加安全例外。安装成功不等于运行验证通过；若有 peer 依赖告警，请在重启后检查插件加载和界面。
 
 ## 开发安装与即时验证
+
+> 适合：参与本插件开发、需要边改边看的贡献者。
 
 开发 profile 使用源码链接，不影响稳定 `web` profile。首次创建开发环境：
 
